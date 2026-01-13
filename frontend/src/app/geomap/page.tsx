@@ -1,7 +1,10 @@
 'use client'
 
+// Disable static prerendering - this page uses client-side only APIs (Leaflet, turf.js)
+export const dynamic = 'force-dynamic'
+
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { MapPin, ArrowLeft, Loader2, Plus } from 'lucide-react'
 import Link from 'next/link'
@@ -17,7 +20,7 @@ import { FileDropZone, ResultsDashboard, ControlPanel } from '@/components/geoma
 import type { ParsedCoordinates } from '@/lib/kmzParser'
 import { useTheme } from '@/context/ThemeContext'
 
-const VoronoiMap = dynamic(
+const VoronoiMap = dynamicImport(
   () => import('@/components/geomap/VoronoiMap'),
   { 
     ssr: false,
