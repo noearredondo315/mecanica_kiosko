@@ -7,14 +7,11 @@ import { MapPin, ArrowLeft, Loader2, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { fetchStores, type Store, addInferredStore as addInferredStoreSupabase } from '@/lib/supabase/api'
-import { 
-  analyzeNewStoreLocation, 
-  checkHeterogeneity, 
-  inferSoilData,
-  type StorePoint,
-  type VoronoiAnalysisResult,
-  type HeterogeneityAlert,
-  type InferredSoilData
+import type {
+  StorePoint,
+  VoronoiAnalysisResult,
+  HeterogeneityAlert,
+  InferredSoilData
 } from '@/lib/voronoi'
 import { FileDropZone, ResultsDashboard, ControlPanel } from '@/components/geomap'
 import type { ParsedCoordinates } from '@/lib/kmzParser'
@@ -82,35 +79,36 @@ export default function GeoMapPage() {
       .filter((s): s is StorePoint => s !== null)
   }, [data?.stores])
 
-  const runAnalysis = useCallback((position: [number, number]) => {
+  const runAnalysis = useCallback(async (position: [number, number]) => {
     if (storePoints.length === 0) return
 
     setIsAnalyzing(true)
     setError(null)
 
-    setTimeout(() => {
-      try {
-        const result = analyzeNewStoreLocation(
-          [position[1], position[0]],
-          storePoints
-        )
-        
-        setAnalysisResult(result)
+    try {
+      // Dynamically import voronoi functions to avoid SSR issues with @turf/turf
+      const { analyzeNewStoreLocation, checkHeterogeneity, inferSoilData } = await import('@/lib/voronoi')
+      
+      const result = analyzeNewStoreLocation(
+        [position[1], position[0]],
+        storePoints
+      )
+      
+      setAnalysisResult(result)
 
-        if (result.naturalNeighbors.length > 0) {
-          const alert = checkHeterogeneity(result.naturalNeighbors)
-          setHeterogeneityAlert(alert)
+      if (result.naturalNeighbors.length > 0) {
+        const alert = checkHeterogeneity(result.naturalNeighbors)
+        setHeterogeneityAlert(alert)
 
-          const inferred = inferSoilData(result.naturalNeighbors)
-          setInferredData(inferred)
-        }
-      } catch (err) {
-        console.error('Analysis error:', err)
-        setError('Error en el análisis de Thiessen')
-      } finally {
-        setIsAnalyzing(false)
+        const inferred = inferSoilData(result.naturalNeighbors)
+        setInferredData(inferred)
       }
-    }, 100)
+    } catch (err) {
+      console.error('Analysis error:', err)
+      setError('Error en el análisis de Thiessen')
+    } finally {
+      setIsAnalyzing(false)
+    }
   }, [storePoints])
 
   const handleMapClick = useCallback((latlng: [number, number]) => {
