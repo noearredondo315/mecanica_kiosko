@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-01-13T07:17:47.014Z",
+  "stores": [
+    {
+      "id": "inferred_1768287849663_exw2y5t9z",
+      "nombre": "Nueva Tienda - CULIACAN",
+      "lat": 24.777695086846297,
+      "lon": -107.37556457519533,
+      "fechaCreacion": "2026-01-13T07:04:09.663Z",
+      "fechaActualizacion": "2026-01-13T07:04:09.663Z",
+      "isInferred": true,
+      "parentStoreId": 42083,
+      "parentStoreName": "12 DE OCTUBRE",
+      "parentDistance": 0.631944984527295,
+      "confidenceScore": 86.11362857620108,
+      "inferredData": {
+        "tipo_suelo": "Arcilla color café (alta compresibilidad) con estrato inferior de arcilla café con boleos; existe relleno superficial con escombro",
+        "clasificacion_sucs": "GC",
+        "qadm_estimado": 20.3,
+        "qadm_min": 18.85,
+        "qadm_max": 28,
+        "profundidad_desplante": 0,
+        "tipo_cimentacion_sugerido": "Losa de Cimentación",
+        "presencia_naf_probable": false,
+        "profundidad_naf_estimada": null,
+        "mejoramiento_probable": true,
+        "observaciones": [
+          "Alta variabilidad en Qadm (18.85 - 28 ton/m²)",
+          "Se anticipa necesidad de mejoramiento del suelo"
+        ]
+      },
+      "metadata": {
+        "ciudad": "CULIACAN"
+      }
+    },
+    {
+      "id": "inferred_1768287914128_tmmk7y6nq",
+      "nombre": "Nueva Tienda - CULIACAN",
+      "lat": 24.77325304437367,
+      "lon": -107.37925529479982,
+      "fechaCreacion": "2026-01-13T07:05:14.128Z",
+      "fechaActualizacion": "2026-01-13T07:05:14.128Z",
+      "isInferred": true,
+      "parentStoreId": 42083,
+      "parentStoreName": "12 DE OCTUBRE",
+      "parentDistance": 1.1362838043409689,
+      "confidenceScore": 78.02889579675438,
+      "inferredData": {
+        "tipo_suelo": "Arcilla color café (alta compresibilidad) con estrato inferior de arcilla café con boleos; existe relleno superficial con escombro",
+        "clasificacion_sucs": "GC",
+        "qadm_estimado": 20.8,
+        "qadm_min": 19.12,
+        "qadm_max": 28,
+        "profundidad_desplante": 0,
+        "tipo_cimentacion_sugerido": "Losa de Cimentación",
+        "presencia_naf_probable": false,
+        "profundidad_naf_estimada": null,
+        "mejoramiento_probable": true,
+        "observaciones": [
+          "Alta variabilidad en Qadm (19.12 - 28 ton/m²)",
+          "Se anticipa necesidad de mejoramiento del suelo"
+        ]
+      },
+      "metadata": {
+        "ciudad": "CULIACAN"
+      }
+    },
+    {
+      "id": "inferred_1768287719392_z3zrcpdcm",
+      "nombre": "Nueva Tienda - CULIACAN",
+      "lat": 24.769590188038688,
+      "lon": -107.37831115722658,
+      "fechaCreacion": "2026-01-13T07:01:59.392Z",
+      "fechaActualizacion": "2026-01-13T07:08:29.451Z",
+      "isInferred": true,
+      "parentStoreId": 42083,
+      "parentStoreName": "12 DE OCTUBRE",
+      "parentDistance": 1.5251423020403092,
+      "confidenceScore": 73.47476943680972,
+      "inferredData": {
+        "tipo_suelo": "Arcilla color café (alta compresibilidad) con estrato inferior de arcilla café con boleos; existe relleno superficial con escombro",
+        "clasificacion_sucs": "GC",
+        "qadm_estimado": 21.3,
+        "qadm_min": 19.12,
+        "qadm_max": 28,
+        "profundidad_desplante": 0,
+        "tipo_cimentacion_sugerido": "Losa de Cimentación",
+        "presencia_naf_probable": false,
+        "profundidad_naf_estimada": null,
+        "mejoramiento_probable": false,
+        "observaciones": [
+          "Alta variabilidad en Qadm (19.12 - 28 ton/m²)"
+        ]
+      },
+      "metadata": {
+        "ciudad": "CULIACAN"
+      }
+    },
+    {
+      "id": "inferred_1768288667014_cozt71j5h",
+      "nombre": "Nueva Tienda - CULIACAN",
+      "lat": 24.814160581042987,
+      "lon": -107.38603591918947,
+      "fechaCreacion": "2026-01-13T07:17:47.014Z",
+      "fechaActualizacion": "2026-01-13T07:17:47.014Z",
+      "isInferred": true,
+      "parentStoreId": 42081,
+      "parentStoreName": "CHIAPAS",
+      "parentDistance": 1.870655645847934,
+      "confidenceScore": 72.70546232579643,
+      "inferredData": {
+        "tipo_suelo": "Depósito con 2 estratos: arcilla CH blanda superficial (mala calidad) sobre arena arcillosa con gravas aisladas tipo SC (balastre) de compacidad media a alta (buena calidad).",
+        "clasificacion_sucs": "CH (0.00–0.80 m) / SC (0.80–2.00 m)",
+        "qadm_estimado": 27.8,
+        "qadm_min": 27.5,
+        "qadm_max": 28,
+        "profundidad_desplante": 0,
+        "tipo_cimentacion_sugerido": "Losa de Cimentación",
+        "presencia_naf_probable": false,
+        "profundidad_naf_estimada": null,
+        "mejoramiento_probable": true,
+        "observaciones": [
+          "Se anticipa necesidad de mejoramiento del suelo"
+        ]
+      },
+      "metadata": {
+        "ciudad": "CULIACAN"
+      }
+    }
+  ]
+}

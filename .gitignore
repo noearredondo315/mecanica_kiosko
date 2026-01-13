@@ -1,0 +1,35 @@
+# Archivos de entorno con API Keys
+.env
+.env.local
+.env.*.local
+
+# Logs de procesamiento
+*.log
+
+# Archivos de salida generados
+Consolidado_Tiendas.xlsx
+Consolidado_Tiendas.csv
+Consolidado_Tiendas.json
+*_errores.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

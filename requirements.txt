@@ -1,0 +1,26 @@
+# =============================================================================
+# Dependencias para Script de Procesamiento de Tiendas
+# Instalar con: pip install -r requirements.txt
+# =============================================================================
+
+# Cliente oficial de OpenAI
+openai>=1.40.0
+
+# Manejo de variables de entorno
+python-dotenv>=1.0.0
+
+# Procesamiento y exportación de datos
+pandas>=2.0.0
+
+# Soporte para archivos Excel (.xlsx)
+openpyxl>=3.1.0
+
+# Barras de progreso y feedback visual
+tqdm>=4.65.0
+rich>=13.0.0
+
+# Procesamiento de PDF (fallback para archivos grandes)
+pypdf>=4.0.0
+
+# Soporte para PDFs encriptados
+cryptography>=3.1
