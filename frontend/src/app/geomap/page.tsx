@@ -12,7 +12,7 @@ import type {
   VoronoiAnalysisResult,
   HeterogeneityAlert,
   InferredSoilData
-} from '@/lib/voronoi'
+} from '@/lib/voronoiTypes'
 import { FileDropZone, ResultsDashboard, ControlPanel } from '@/components/geomap'
 import type { ParsedCoordinates } from '@/lib/kmzParser'
 import { useTheme } from '@/context/ThemeContext'

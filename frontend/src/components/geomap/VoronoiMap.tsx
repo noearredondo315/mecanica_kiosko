@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import L from 'leaflet'
 import type { Store, InferredStore } from '@/lib/supabase/api'
-import type { StorePoint, VoronoiCell } from '@/lib/voronoi'
+import type { StorePoint, VoronoiCell } from '@/lib/voronoiTypes'
 import { useTheme } from '@/context/ThemeContext'
 
 interface VoronoiMapProps {

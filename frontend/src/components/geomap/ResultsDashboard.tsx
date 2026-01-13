@@ -6,7 +6,7 @@ import {
   Layers, Droplets, Building2, FileWarning,
   ChevronDown, ChevronUp, Info, Save, CheckCircle2
 } from 'lucide-react'
-import type { StorePoint, NaturalNeighborWeight, HeterogeneityAlert, InferredSoilData } from '@/lib/voronoi'
+import type { StorePoint, NaturalNeighborWeight, HeterogeneityAlert, InferredSoilData } from '@/lib/voronoiTypes'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from '@/context/ThemeContext'
