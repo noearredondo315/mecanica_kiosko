@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, X, Sun, Moon, MapPin, Grid3X3, ArrowRight, Download, Upload, FolderOpen, CheckCircle, AlertCircle, Table, LogOut, User } from 'lucide-react'
@@ -9,11 +9,8 @@ import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 import { 
-  loadInferredStores, 
-  downloadInferredStoresJSON, 
-  importInferredStoresFromFile,
-  type ImportResult 
-} from '@/lib/inferredStoresPersistence'
+  fetchInferredStores, 
+} from '@/lib/supabase/api'
 
 interface SidebarProps {
   searchQuery: string
@@ -29,7 +26,7 @@ export default function Sidebar({
   onInferredStoresChange,
 }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { profile, signOut, isAdmin, canEdit } = useAuth()
+  const { profile, signOut } = useAuth()
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [inferredStoresCount, setInferredStoresCount] = useState(0)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -37,15 +34,22 @@ export default function Sidebar({
   const [showStoresTable, setShowStoresTable] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Load inferred stores count on client-side only to avoid hydration mismatch
-  useEffect(() => {
-    const data = loadInferredStores()
-    setInferredStoresCount(data.stores.length)
+  // Load inferred stores count from Supabase
+  const refreshInferredCount = useCallback(async () => {
+    try {
+      const stores = await fetchInferredStores()
+      setInferredStoresCount(stores.length)
+    } catch (err) {
+      console.error('Error fetching inferred count:', err)
+    }
   }, [])
 
-  const handleExportClick = () => {
-    const data = loadInferredStores()
-    if (data.stores.length === 0) {
+  useEffect(() => {
+    refreshInferredCount()
+  }, [refreshInferredCount])
+
+  const handleExportClick = async () => {
+    if (inferredStoresCount === 0) {
       setImportStatus({ type: 'error', message: 'No hay tiendas inferidas para exportar' })
       setTimeout(() => setImportStatus(null), 3000)
       return
@@ -57,14 +61,29 @@ export default function Sidebar({
     setShowExportDialog(true)
   }
 
-  const handleExportConfirm = () => {
-    const filename = exportFilename.trim() || 'tiendas_inferidas'
-    downloadInferredStoresJSON(filename)
-    const data = loadInferredStores()
-    setImportStatus({ type: 'success', message: `${data.stores.length} tiendas exportadas` })
-    setTimeout(() => setImportStatus(null), 3000)
-    setShowExportDialog(false)
-    setExportFilename('')
+  const handleExportConfirm = async () => {
+    try {
+      const filename = exportFilename.trim() || 'tiendas_inferidas'
+      const stores = await fetchInferredStores()
+      const dataStr = JSON.stringify(stores, null, 2)
+      const blob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${filename}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      setImportStatus({ type: 'success', message: `${stores.length} tiendas exportadas` })
+      setTimeout(() => setImportStatus(null), 3000)
+      setShowExportDialog(false)
+      setExportFilename('')
+    } catch (err) {
+      setImportStatus({ type: 'error', message: 'Error al exportar' })
+      setTimeout(() => setImportStatus(null), 3000)
+    }
   }
 
   const handleImportClick = () => {
@@ -75,21 +94,45 @@ export default function Sidebar({
     const file = e.target.files?.[0]
     if (!file) return
 
-    const result: ImportResult = await importInferredStoresFromFile(file, true)
-    
-    if (result.success) {
-      setImportStatus({ 
-        type: 'success', 
-        message: `${result.imported} tiendas importadas${result.skipped > 0 ? `, ${result.skipped} omitidas` : ''}` 
-      })
-      // Refresh the count after import
-      const updatedData = loadInferredStores()
-      setInferredStoresCount(updatedData.stores.length)
-      onInferredStoresChange?.()
-    } else {
+    try {
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        try {
+          const content = event.target?.result as string
+          const stores = JSON.parse(content)
+          
+          if (!Array.isArray(stores)) {
+            throw new Error('El archivo no contiene un arreglo de tiendas válido')
+          }
+
+          const { addInferredStore } = await import('@/lib/supabase/api')
+          let imported = 0
+          for (const store of stores) {
+            // Remove local IDs and dates to let Supabase handle them
+            const { id, created_at, updated_at, user_id, ...storeData } = store
+            await addInferredStore(storeData)
+            imported++
+          }
+
+          setImportStatus({ 
+            type: 'success', 
+            message: `${imported} tiendas importadas exitosamente` 
+          })
+          
+          refreshInferredCount()
+          onInferredStoresChange?.()
+        } catch (err: any) {
+          setImportStatus({ 
+            type: 'error', 
+            message: err.message || 'Error al procesar el archivo' 
+          })
+        }
+      }
+      reader.readAsText(file)
+    } catch (err) {
       setImportStatus({ 
         type: 'error', 
-        message: result.errors[0] || 'Error al importar' 
+        message: 'Error al leer el archivo' 
       })
     }
     
@@ -401,8 +444,7 @@ export default function Sidebar({
         isOpen={showStoresTable}
         onClose={() => setShowStoresTable(false)}
         onStoresChange={() => {
-          const data = loadInferredStores()
-          setInferredStoresCount(data.stores.length)
+          refreshInferredCount()
           onInferredStoresChange?.()
         }}
       />

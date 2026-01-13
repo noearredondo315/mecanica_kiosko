@@ -3,8 +3,8 @@
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react'
-import type { Store, Metadata } from '@/lib/api'
-import { formatPercent } from '@/lib/api'
+import type { Store, Metadata } from '@/lib/supabase/api'
+import { formatPercent } from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
 
 interface MetricsPanelProps {
@@ -20,16 +20,16 @@ export default function MetricsPanel({
   storeHistory,
   isLoadingHistory,
 }: MetricsPanelProps) {
-  const errorRateData = Object.entries(metadata.error_by_city)
-    .map(([city, data]) => ({
+  const errorRateData = metadata.stores_by_city ? Object.entries(metadata.stores_by_city)
+    .map(([city, count]) => ({
       city: city.length > 10 ? city.substring(0, 10) + '...' : city,
       fullCity: city,
-      rate: data.rate,
-      total: data.total,
-      errors: data.errors,
+      rate: Math.round((count / metadata.total_stores) * 100),
+      total: metadata.total_stores,
+      count: count,
     }))
     .sort((a, b) => b.rate - a.rate)
-    .slice(0, 8)
+    .slice(0, 8) : []
 
   return (
     <div className="w-96 glass-sidebar h-full flex flex-col border-l border-white/10">
@@ -47,13 +47,10 @@ export default function MetricsPanel({
           >
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-slate-400">Tiendas OK</span>
+              <span className="text-xs text-slate-400">Total Tiendas</span>
             </div>
             <p className="text-2xl font-bold text-white">
-              {metadata.total_stores - metadata.stores_with_error}
-            </p>
-            <p className="text-xs text-green-400">
-              {formatPercent(100 - metadata.error_rate)}
+              {metadata.total_stores}
             </p>
           </motion.div>
 
@@ -64,14 +61,11 @@ export default function MetricsPanel({
             className="glass-card p-4"
           >
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              <span className="text-xs text-slate-400">Con Error</span>
+              <AlertCircle className="w-4 h-4 text-blue-400" />
+              <span className="text-xs text-slate-400">Ciudades</span>
             </div>
-            <p className="text-2xl font-bold text-red-400">
-              {metadata.stores_with_error}
-            </p>
-            <p className="text-xs text-red-400">
-              {formatPercent(metadata.error_rate)}
+            <p className="text-2xl font-bold text-blue-400">
+              {metadata.cities.length}
             </p>
           </motion.div>
         </div>
@@ -109,13 +103,10 @@ export default function MetricsPanel({
                         <div className="glass-card p-3 text-sm">
                           <p className="font-medium text-white">{data.fullCity}</p>
                           <p className="text-slate-400">
-                            {data.errors} de {data.total} tiendas
+                            {data.count} tiendas
                           </p>
-                          <p className={cn(
-                            'font-semibold',
-                            data.rate > 20 ? 'text-red-400' : 'text-green-400'
-                          )}>
-                            {data.rate}% error
+                          <p className="font-semibold text-blue-400">
+                            {data.rate}% del total
                           </p>
                         </div>
                       )
@@ -127,7 +118,7 @@ export default function MetricsPanel({
                   {errorRateData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`}
-                      fill={entry.rate > 20 ? '#ef4444' : entry.rate > 10 ? '#f59e0b' : '#22c55e'}
+                      fill="#3b82f6"
                     />
                   ))}
                 </Bar>
@@ -148,11 +139,9 @@ export default function MetricsPanel({
               </h3>
               <span className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-medium',
-                selectedStore.error 
-                  ? 'bg-red-500/20 text-red-400' 
-                  : 'bg-green-500/20 text-green-400'
+                'bg-green-500/20 text-green-400'
               )}>
-                {selectedStore.error ? 'Error' : 'OK'}
+                OK
               </span>
             </div>
 
@@ -215,8 +204,8 @@ export default function MetricsPanel({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-white">{record.año}</span>
-                    {idx > 0 && storeHistory[idx - 1].qadm && record.qadm && (
-                      record.qadm > storeHistory[idx - 1].qadm 
+                    {idx > 0 && storeHistory && storeHistory[idx - 1].qadm && record.qadm && (
+                      record.qadm > (storeHistory[idx - 1].qadm || 0) 
                         ? <TrendingUp className="w-3 h-3 text-green-400" />
                         : <TrendingDown className="w-3 h-3 text-red-400" />
                     )}
@@ -227,10 +216,7 @@ export default function MetricsPanel({
                         {record.qadm} ton/m²
                       </span>
                     )}
-                    <span className={cn(
-                      'w-2 h-2 rounded-full',
-                      record.error ? 'bg-red-500' : 'bg-green-500'
-                    )} />
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
                   </div>
                 </div>
               ))}

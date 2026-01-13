@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MapPin, Calendar, Building2, Layers, Droplets, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
-import type { Store, AlternativaCimentacion } from '@/lib/api'
+import type { Store, AlternativaCimentacion } from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
 
 interface StoreDetailPanelProps {
@@ -344,10 +344,10 @@ export default function StoreDetailPanel({ store, onClose }: StoreDetailPanelPro
             </Section>
 
             {/* Alternativas de Cimentación */}
-            {store.alternativas_cimentacion && store.alternativas_cimentacion.length > 0 && (
-              <Section title={`Alternativas Analizadas (${store.alternativas_cimentacion.length})`} icon={Layers} defaultOpen={false}>
+            {Array.isArray(store.alternativas_cimentacion) && (store.alternativas_cimentacion as any[]).length > 0 && (
+              <Section title={`Alternativas Analizadas (${(store.alternativas_cimentacion as any[]).length})`} icon={Layers} defaultOpen={false}>
                 <div className="space-y-2">
-                  {store.alternativas_cimentacion.map((alt, idx) => (
+                  {(store.alternativas_cimentacion as any[]).map((alt, idx) => (
                     <AlternativaCard key={idx} alternativa={alt} index={idx} />
                   ))}
                 </div>

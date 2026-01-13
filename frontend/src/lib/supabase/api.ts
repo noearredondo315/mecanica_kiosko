@@ -3,8 +3,8 @@
 import { createClient } from './client'
 import type { Database } from './types'
 
-type Store = Database['public']['Tables']['stores']['Row']
-type InferredStore = Database['public']['Tables']['inferred_stores']['Row']
+export type Store = Database['public']['Tables']['stores']['Row']
+export type InferredStore = Database['public']['Tables']['inferred_stores']['Row']
 
 export interface AlternativaCimentacion {
   tipo_cimentacion: string
@@ -52,12 +52,14 @@ export async function fetchStores(params?: {
     query = query.or(`nombre.ilike.${searchTerm},ciudad.ilike.${searchTerm}`)
   }
   
-  const { data: stores, error } = await query
+  const { data, error } = await query
   
   if (error) {
     console.error('Error fetching stores:', error)
     throw new Error('Failed to fetch stores')
   }
+  
+  const stores = data as Store[]
   
   // Calculate metadata
   const validStores = stores || []
@@ -92,7 +94,7 @@ export async function fetchCities(): Promise<{ cities: string[] }> {
     throw new Error('Failed to fetch cities')
   }
   
-  const cities = Array.from(new Set(data?.map(s => s.ciudad).filter(Boolean))) as string[]
+  const cities = Array.from(new Set((data as any[])?.map(s => s.ciudad).filter(Boolean))) as string[]
   return { cities: cities.sort() }
 }
 
@@ -108,7 +110,7 @@ export async function fetchYears(): Promise<{ years: number[] }> {
     throw new Error('Failed to fetch years')
   }
   
-  const years = Array.from(new Set(data?.map(s => s.año).filter(Boolean))) as number[]
+  const years = Array.from(new Set((data as any[])?.map(s => s.año).filter(Boolean))) as number[]
   return { years: years.sort() }
 }
 
@@ -136,7 +138,7 @@ export async function addInferredStore(store: Database['public']['Tables']['infe
   
   const { data, error } = await supabase
     .from('inferred_stores')
-    .insert({ ...store, user_id: user?.id })
+    .insert([{ ...store, user_id: user?.id }] as any)
     .select()
     .single()
   
@@ -145,7 +147,7 @@ export async function addInferredStore(store: Database['public']['Tables']['infe
     throw new Error('Failed to add inferred store')
   }
   
-  return data
+  return data as InferredStore
 }
 
 export async function updateInferredStore(
@@ -154,8 +156,8 @@ export async function updateInferredStore(
 ): Promise<InferredStore> {
   const supabase = createClient()
   
-  const { data, error } = await supabase
-    .from('inferred_stores')
+  const { data, error } = await (supabase
+    .from('inferred_stores') as any)
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
@@ -166,7 +168,7 @@ export async function updateInferredStore(
     throw new Error('Failed to update inferred store')
   }
   
-  return data
+  return data as InferredStore
 }
 
 export async function deleteInferredStore(id: string): Promise<void> {

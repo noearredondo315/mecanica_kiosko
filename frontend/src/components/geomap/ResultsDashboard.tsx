@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronUp, Info, Save, CheckCircle2
 } from 'lucide-react'
 import type { StorePoint, NaturalNeighborWeight, HeterogeneityAlert, InferredSoilData } from '@/lib/voronoi'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from '@/context/ThemeContext'
 

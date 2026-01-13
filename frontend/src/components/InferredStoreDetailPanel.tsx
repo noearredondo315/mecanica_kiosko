@@ -3,11 +3,11 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MapPin, Calendar, Building2, Layers, Droplets, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Trash2, Edit3 } from 'lucide-react'
 import { useState } from 'react'
-import type { InferredStoreRecord } from '@/lib/inferredStoresPersistence'
+import type { InferredStore } from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
 
 interface InferredStoreDetailPanelProps {
-  store: InferredStoreRecord | null
+  store: InferredStore | null
   onClose: () => void
   onDelete?: (id: string) => void
   onEdit?: (id: string, newName: string) => void
@@ -177,7 +177,7 @@ export default function InferredStoreDetailPanel({
                 <h2 className="text-lg font-bold text-orange-400 truncate">{store.nombre}</h2>
               )}
               <p className="text-sm text-[rgb(var(--text-secondary))] truncate mt-0.5">
-                {store.metadata?.ciudad || 'Ubicación no especificada'}
+                {(store.metadata as any)?.ciudad || 'Ubicación no especificada'}
               </p>
             </div>
             <div className="flex gap-1">
@@ -210,19 +210,19 @@ export default function InferredStoreDetailPanel({
           <div className="flex gap-2 mt-3">
             <div className="flex-1 p-2 rounded-lg text-center bg-orange-500/10">
               <p className="text-lg font-bold text-orange-500">
-                {store.inferredData?.qadm_estimado?.toFixed(1) || 'N/A'}
+                {(store.inferred_data as any)?.qadm_estimado?.toFixed(1) || 'N/A'}
               </p>
               <p className="text-[10px] text-[rgb(var(--text-muted))]">Qadm (ton/m²)</p>
             </div>
             <div className="flex-1 p-2 rounded-lg text-center bg-[rgba(var(--glass-bg))]">
               <p className="text-lg font-bold text-[rgb(var(--text-primary))]">
-                {Math.round(store.confidenceScore)}%
+                {Math.round(store.confidence_score || 0)}%
               </p>
               <p className="text-[10px] text-[rgb(var(--text-muted))]">Confianza</p>
             </div>
             <div className="flex-1 p-2 rounded-lg text-center bg-[rgba(var(--glass-bg))]">
               <p className="text-lg font-bold text-[rgb(var(--text-primary))]">
-                {store.parentDistance?.toFixed(1) || 'N/A'}
+                {(store.metadata as any)?.parentDistance?.toFixed(1) || 'N/A'}
               </p>
               <p className="text-[10px] text-[rgb(var(--text-muted))]">Dist. (km)</p>
             </div>
@@ -233,23 +233,23 @@ export default function InferredStoreDetailPanel({
         <div className="flex-1 overflow-y-auto">
           {/* Parent Store Info */}
           <Section title="Tienda de Referencia" icon={Building2} accentColor="blue">
-            <DataRow label="Nombre" value={store.parentStoreName} />
-            <DataRow label="ID" value={store.parentStoreId} />
-            <DataRow label="Distancia" value={store.parentDistance ? `${store.parentDistance.toFixed(2)} km` : undefined} highlight highlightColor="blue" />
+            <DataRow label="Nombre" value={store.parent_store_name} />
+            <DataRow label="ID" value={store.parent_store_id} />
+            <DataRow label="Distancia" value={(store.metadata as any)?.parentDistance ? `${(store.metadata as any).parentDistance.toFixed(2)} km` : undefined} highlight highlightColor="blue" />
           </Section>
 
           {/* Inferred Data */}
           <Section title="Datos Inferidos" icon={Layers} accentColor="orange">
-            <DataRow label="Qadm Estimado" value={store.inferredData?.qadm_estimado ? `${store.inferredData.qadm_estimado.toFixed(2)} ton/m²` : undefined} highlight />
-            <DataRow label="Rango Qadm" value={store.inferredData?.qadm_min && store.inferredData?.qadm_max ? `${store.inferredData.qadm_min.toFixed(1)} - ${store.inferredData.qadm_max.toFixed(1)} ton/m²` : undefined} />
-            <DataRow label="Clasificación SUCS" value={store.inferredData?.clasificacion_sucs} />
-            <DataRow label="Cimentación Sugerida" value={store.inferredData?.tipo_cimentacion_sugerido} highlight />
-            <DataRow label="Desplante" value={store.inferredData?.profundidad_desplante !== undefined ? `${store.inferredData.profundidad_desplante} m` : undefined} />
+            <DataRow label="Qadm Estimado" value={(store.inferred_data as any)?.qadm_estimado ? `${(store.inferred_data as any).qadm_estimado.toFixed(2)} ton/m²` : undefined} highlight />
+            <DataRow label="Rango Qadm" value={(store.inferred_data as any)?.qadm_min && (store.inferred_data as any)?.qadm_max ? `${(store.inferred_data as any).qadm_min.toFixed(1)} - ${(store.inferred_data as any).qadm_max.toFixed(1)} ton/m²` : undefined} />
+            <DataRow label="Clasificación SUCS" value={(store.inferred_data as any)?.clasificacion_sucs} />
+            <DataRow label="Cimentación Sugerida" value={(store.inferred_data as any)?.tipo_cimentacion_sugerido} highlight />
+            <DataRow label="Desplante" value={(store.inferred_data as any)?.profundidad_desplante !== undefined ? `${(store.inferred_data as any).profundidad_desplante} m` : undefined} />
             
-            {store.inferredData?.tipo_suelo && (
+            {(store.inferred_data as any)?.tipo_suelo && (
               <div className="mt-2 p-2 rounded-lg bg-[rgba(var(--glass-bg))]">
                 <p className="text-xs text-[rgb(var(--text-muted))] mb-1">Tipo de Suelo:</p>
-                <p className="text-xs text-[rgb(var(--text-secondary))]">{store.inferredData.tipo_suelo}</p>
+                <p className="text-xs text-[rgb(var(--text-secondary))]">{(store.inferred_data as any).tipo_suelo}</p>
               </div>
             )}
           </Section>
@@ -257,21 +257,21 @@ export default function InferredStoreDetailPanel({
           {/* Alerts */}
           <Section title="Alertas y Observaciones" icon={AlertTriangle} accentColor="orange">
             <div className="space-y-2">
-              {store.inferredData?.mejoramiento_probable && (
+              {(store.inferred_data as any)?.mejoramiento_probable && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10">
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                   <span className="text-xs text-amber-400">Se anticipa necesidad de mejoramiento</span>
                 </div>
               )}
-              {store.inferredData?.presencia_naf_probable && (
+              {(store.inferred_data as any)?.presencia_naf_probable && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10">
                   <Droplets className="w-4 h-4 text-blue-500 shrink-0" />
                   <span className="text-xs text-blue-400">
-                    Posible NAF a {store.inferredData.profundidad_naf_estimada || '?'} m
+                    Posible NAF a {(store.inferred_data as any).profundidad_naf_estimada || '?'} m
                   </span>
                 </div>
               )}
-              {store.inferredData?.observaciones?.map((obs, idx) => (
+              {(store.inferred_data as any)?.observaciones?.map((obs: string, idx: number) => (
                 <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-[rgba(var(--glass-bg))]">
                   <CheckCircle className="w-4 h-4 text-[rgb(var(--text-muted))] shrink-0 mt-0.5" />
                   <span className="text-xs text-[rgb(var(--text-secondary))]">{obs}</span>
@@ -282,15 +282,15 @@ export default function InferredStoreDetailPanel({
 
           {/* Location */}
           <Section title="Ubicación" icon={MapPin} defaultOpen={false}>
-            <DataRow label="Latitud" value={store.lat.toFixed(6)} />
-            <DataRow label="Longitud" value={store.lon.toFixed(6)} />
-            <DataRow label="Ciudad" value={store.metadata?.ciudad} />
+            <DataRow label="Latitud" value={store.latitud.toFixed(6)} />
+            <DataRow label="Longitud" value={store.longitud.toFixed(6)} />
+            <DataRow label="Ciudad" value={(store.metadata as any)?.ciudad} />
           </Section>
 
           {/* Dates */}
           <Section title="Información" icon={Calendar} defaultOpen={false}>
-            <DataRow label="Creada" value={formatDate(store.fechaCreacion)} />
-            <DataRow label="Actualizada" value={formatDate(store.fechaActualizacion)} />
+            <DataRow label="Creada" value={formatDate(store.created_at)} />
+            <DataRow label="Actualizada" value={formatDate(store.updated_at)} />
             <DataRow label="ID" value={store.id} />
           </Section>
         </div>

@@ -2,17 +2,16 @@
 
 import { useEffect, useRef, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Store } from '@/lib/api'
+import type { Store, InferredStore } from '@/lib/supabase/api'
 import { useTheme } from '@/context/ThemeContext'
 import L from 'leaflet'
 import 'leaflet.markercluster'
-import { loadInferredStores, type InferredStoreRecord } from '@/lib/inferredStoresPersistence'
 
 interface StoreMapProps {
   stores: Store[]
   selectedStore: Store | null
   onStoreSelect: (store: Store) => void
-  onInferredStoreSelect?: (store: InferredStoreRecord) => void
+  onInferredStoreSelect?: (store: InferredStore) => void
   isLoading?: boolean
   inferredStoresRefresh?: number
 }
@@ -31,16 +30,24 @@ export default function StoreMap({
   const { theme } = useTheme()
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const markersRef = useRef<L.MarkerClusterGroup | null>(null)
+  const markersRef = useRef<any>(null)
   const inferredMarkersRef = useRef<L.LayerGroup | null>(null)
   const storeMarkersRef = useRef<Map<number, L.Marker>>(new Map())
   const tileLayerRef = useRef<L.TileLayer | null>(null)
-  const [savedInferredStores, setSavedInferredStores] = useState<InferredStoreRecord[]>([])
+  const [savedInferredStores, setSavedInferredStores] = useState<InferredStore[]>([])
 
-  // Load inferred stores from localStorage
+  // Load inferred stores from Supabase
   useEffect(() => {
-    const data = loadInferredStores()
-    setSavedInferredStores(data.stores)
+    const loadData = async () => {
+      try {
+        const { fetchInferredStores } = await import('@/lib/supabase/api')
+        const stores = await fetchInferredStores()
+        setSavedInferredStores(stores)
+      } catch (err) {
+        console.error('Error loading inferred stores:', err)
+      }
+    }
+    loadData()
   }, [inferredStoresRefresh])
 
   const validStores = useMemo(() => 
@@ -97,13 +104,13 @@ export default function StoreMap({
     }
     storeMarkersRef.current.clear()
 
-    markersRef.current = L.markerClusterGroup({
+    markersRef.current = (L as any).markerClusterGroup({
       chunkedLoading: true,
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
       maxClusterRadius: 50,
-      iconCreateFunction: (cluster: L.MarkerCluster) => {
+      iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount()
         let size = 'small'
         let sizeNum = 36
@@ -235,7 +242,7 @@ export default function StoreMap({
         iconAnchor: [20, 20],
       })
 
-      const marker = L.marker([store.lat, store.lon], { icon })
+      const marker = L.marker([store.latitud, store.longitud], { icon })
 
       const tooltipContent = `
         <div class="store-tooltip">
@@ -245,18 +252,18 @@ export default function StoreMap({
           <div class="tooltip-divider"></div>
           <div class="tooltip-row">
             <span class="tooltip-label">Confianza:</span>
-            <span class="tooltip-value"><strong>${Math.round(store.confidenceScore)}%</strong></span>
+            <span class="tooltip-value"><strong>${Math.round(store.confidence_score || 0)}%</strong></span>
           </div>
-          ${store.parentStoreName ? `
+          ${store.parent_store_name ? `
             <div class="tooltip-row">
               <span class="tooltip-label">Basada en:</span>
-              <span class="tooltip-value">${store.parentStoreName}</span>
+              <span class="tooltip-value">${store.parent_store_name}</span>
             </div>
           ` : ''}
-          ${store.inferredData?.qadm_estimado ? `
+          ${(store.inferred_data as any)?.qadm_estimado ? `
             <div class="tooltip-row">
               <span class="tooltip-label">Qadm est.:</span>
-              <span class="tooltip-value"><strong>${store.inferredData.qadm_estimado.toFixed(2)} ton/m²</strong></span>
+              <span class="tooltip-value"><strong>${(store.inferred_data as any).qadm_estimado.toFixed(2)} ton/m²</strong></span>
             </div>
           ` : ''}
         </div>

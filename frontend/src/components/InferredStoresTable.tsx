@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, Edit3, Check, MapPin, ChevronDown, ChevronUp } from 'lucide-react'
 import { 
-  loadInferredStores, 
+  fetchInferredStores, 
   updateInferredStore, 
   deleteInferredStore,
-  type InferredStoreRecord 
-} from '@/lib/inferredStoresPersistence'
+  type InferredStore
+} from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
 
 interface InferredStoresTableProps {
@@ -22,28 +22,32 @@ export default function InferredStoresTable({
   onClose,
   onStoresChange 
 }: InferredStoresTableProps) {
-  const [stores, setStores] = useState<InferredStoreRecord[]>([])
+  const [stores, setStores] = useState<InferredStore[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [sortField, setSortField] = useState<'nombre' | 'fechaCreacion' | 'confidenceScore'>('fechaCreacion')
+  const [sortField, setSortField] = useState<'nombre' | 'created_at' | 'confidence_score'>('created_at')
   const [sortAsc, setSortAsc] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      const data = loadInferredStores()
-      setStores(data.stores)
+      loadData()
     }
   }, [isOpen])
+
+  const loadData = async () => {
+    const data = await fetchInferredStores()
+    setStores(data)
+  }
 
   const sortedStores = [...stores].sort((a, b) => {
     let comparison = 0
     if (sortField === 'nombre') {
       comparison = a.nombre.localeCompare(b.nombre)
-    } else if (sortField === 'fechaCreacion') {
-      comparison = new Date(a.fechaCreacion).getTime() - new Date(b.fechaCreacion).getTime()
-    } else if (sortField === 'confidenceScore') {
-      comparison = a.confidenceScore - b.confidenceScore
+    } else if (sortField === 'created_at') {
+      comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    } else if (sortField === 'confidence_score') {
+      comparison = (a.confidence_score || 0) - (b.confidence_score || 0)
     }
     return sortAsc ? comparison : -comparison
   })
@@ -57,26 +61,24 @@ export default function InferredStoresTable({
     }
   }
 
-  const handleStartEdit = (store: InferredStoreRecord) => {
+  const handleStartEdit = (store: InferredStore) => {
     setEditingId(store.id)
     setEditName(store.nombre)
   }
 
-  const handleSaveEdit = (id: string) => {
+  const handleSaveEdit = async (id: string) => {
     if (editName.trim()) {
-      updateInferredStore(id, { nombre: editName.trim() })
-      const data = loadInferredStores()
-      setStores(data.stores)
+      await updateInferredStore(id, { nombre: editName.trim() })
+      await loadData()
       onStoresChange()
     }
     setEditingId(null)
     setEditName('')
   }
 
-  const handleDelete = (id: string) => {
-    deleteInferredStore(id)
-    const data = loadInferredStores()
-    setStores(data.stores)
+  const handleDelete = async (id: string) => {
+    await deleteInferredStore(id)
+    await loadData()
     setDeleteConfirmId(null)
     onStoresChange()
   }
@@ -159,22 +161,22 @@ export default function InferredStoresTable({
                     </th>
                     <th 
                       className="text-center p-3 text-xs font-semibold text-[rgb(var(--text-muted))] uppercase tracking-wider cursor-pointer hover:text-[rgb(var(--text-primary))] transition-colors"
-                      onClick={() => handleSort('confidenceScore')}
+                      onClick={() => handleSort('confidence_score')}
                     >
                       <div className="flex items-center justify-center gap-1">
                         Confianza
-                        {sortField === 'confidenceScore' && (
+                        {sortField === 'confidence_score' && (
                           sortAsc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                         )}
                       </div>
                     </th>
                     <th 
                       className="text-center p-3 text-xs font-semibold text-[rgb(var(--text-muted))] uppercase tracking-wider cursor-pointer hover:text-[rgb(var(--text-primary))] transition-colors"
-                      onClick={() => handleSort('fechaCreacion')}
+                      onClick={() => handleSort('created_at')}
                     >
                       <div className="flex items-center justify-center gap-1">
                         Fecha
-                        {sortField === 'fechaCreacion' && (
+                        {sortField === 'created_at' && (
                           sortAsc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                         )}
                       </div>
@@ -217,26 +219,26 @@ export default function InferredStoresTable({
                       </td>
                       <td className="p-3">
                         <span className="text-sm text-[rgb(var(--text-secondary))]">
-                          {store.metadata?.ciudad || 'N/A'}
+                          {(store.metadata as any)?.ciudad || 'N/A'}
                         </span>
                       </td>
                       <td className="p-3">
                         <span className="text-sm text-[rgb(var(--text-secondary))]">
-                          {store.parentStoreName || 'N/A'}
+                          {store.parent_store_name || 'N/A'}
                         </span>
                       </td>
                       <td className="p-3 text-center">
                         <span className={cn(
                           'text-sm font-medium',
-                          store.confidenceScore >= 80 ? 'text-green-500' :
-                          store.confidenceScore >= 60 ? 'text-amber-500' : 'text-red-500'
+                          (store.confidence_score || 0) >= 80 ? 'text-green-500' :
+                          (store.confidence_score || 0) >= 60 ? 'text-amber-500' : 'text-red-500'
                         )}>
-                          {Math.round(store.confidenceScore)}%
+                          {Math.round(store.confidence_score || 0)}%
                         </span>
                       </td>
                       <td className="p-3 text-center">
                         <span className="text-xs text-[rgb(var(--text-muted))]">
-                          {formatDate(store.fechaCreacion)}
+                          {formatDate(store.created_at)}
                         </span>
                       </td>
                       <td className="p-3">

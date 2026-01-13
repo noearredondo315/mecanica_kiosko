@@ -3,10 +3,9 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import L from 'leaflet'
-import type { Store } from '@/lib/api'
+import type { Store, InferredStore } from '@/lib/supabase/api'
 import type { StorePoint, VoronoiCell } from '@/lib/voronoi'
 import { useTheme } from '@/context/ThemeContext'
-import { loadInferredStores, type InferredStoreRecord } from '@/lib/inferredStoresPersistence'
 
 interface VoronoiMapProps {
   stores: Store[]
@@ -46,15 +45,23 @@ export default function VoronoiMap({
   const newStoreMarkerRef = useRef<L.Marker | null>(null)
   const newStoreCellRef = useRef<L.GeoJSON | null>(null)
   const connectionLineRef = useRef<L.Polyline | null>(null)
-  const [savedInferredStores, setSavedInferredStores] = useState<InferredStoreRecord[]>([])
+  const [savedInferredStores, setSavedInferredStores] = useState<InferredStore[]>([])
 
   const validStores = stores.filter(s => s.latitud !== null && s.longitud !== null)
   const isDark = theme === 'dark'
 
-  // Load saved inferred stores from localStorage
+  // Load saved inferred stores from Supabase
   useEffect(() => {
-    const data = loadInferredStores()
-    setSavedInferredStores(data.stores)
+    const loadData = async () => {
+      try {
+        const { fetchInferredStores } = await import('@/lib/supabase/api')
+        const stores = await fetchInferredStores()
+        setSavedInferredStores(stores)
+      } catch (err) {
+        console.error('Error loading inferred stores:', err)
+      }
+    }
+    loadData()
   }, [refreshTrigger])
 
   useEffect(() => {
@@ -205,7 +212,7 @@ export default function VoronoiMap({
         iconAnchor: [20, 20],
       })
 
-      const marker = L.marker([store.lat, store.lon], { icon })
+      const marker = L.marker([store.latitud, store.longitud], { icon })
 
       const tooltipBg = isDark ? '#1e293b' : '#ffffff'
       const tooltipText = isDark ? '#f8fafc' : '#0f172a'
@@ -220,18 +227,18 @@ export default function VoronoiMap({
           <div class="tooltip-divider" style="background: ${tooltipBorder};"></div>
           <div class="tooltip-row">
             <span class="tooltip-label" style="color: ${labelColor};">Confianza:</span>
-            <span class="tooltip-value"><strong>${Math.round(store.confidenceScore)}%</strong></span>
+            <span class="tooltip-value"><strong>${Math.round(store.confidence_score || 0)}%</strong></span>
           </div>
-          ${store.parentStoreName ? `
+          ${store.parent_store_name ? `
             <div class="tooltip-row">
               <span class="tooltip-label" style="color: ${labelColor};">Basada en:</span>
-              <span class="tooltip-value">${store.parentStoreName}</span>
+              <span class="tooltip-value">${store.parent_store_name}</span>
             </div>
           ` : ''}
-          ${store.inferredData?.qadm_estimado ? `
+          ${(store.inferred_data as any)?.qadm_estimado ? `
             <div class="tooltip-row">
               <span class="tooltip-label" style="color: ${labelColor};">Qadm estimado:</span>
-              <span class="tooltip-value"><strong>${store.inferredData.qadm_estimado.toFixed(2)} ton/m²</strong></span>
+              <span class="tooltip-value"><strong>${(store.inferred_data as any).qadm_estimado.toFixed(2)} ton/m²</strong></span>
             </div>
           ` : ''}
         </div>

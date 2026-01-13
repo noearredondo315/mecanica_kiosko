@@ -2,7 +2,7 @@ import * as turf from '@turf/turf'
 import type { Feature, FeatureCollection, Point, Polygon, Position } from 'geojson'
 
 export interface StorePoint {
-  id: number | string
+  id: number
   nombre: string
   lat: number
   lon: number
@@ -16,7 +16,7 @@ export interface StorePoint {
   mejoramiento_requerido: boolean
   detalles_mejoramiento: string | null
   ciudad: string | null
-  año: number
+  año: number | null
   observaciones_criticas: string | null
   isInferred?: boolean
   origin?: {
@@ -28,7 +28,7 @@ export interface StorePoint {
 }
 
 export interface VoronoiCell {
-  storeId: number | string
+  storeId: number
   storeName: string
   polygon: Feature<Polygon>
   centroid: Position
@@ -37,7 +37,7 @@ export interface VoronoiCell {
 }
 
 export interface NaturalNeighborWeight {
-  storeId: number | string
+  storeId: number
   storeName: string
   weight: number
   distance: number
@@ -194,8 +194,8 @@ export function calculateNaturalNeighborWeights(
   let totalStolenArea = 0
 
   stores.forEach(store => {
-    const originalArea = originalAreas.get(store.id) || 0
-    const newArea = newAreas.get(store.id) || 0
+    const originalArea = originalAreas.get(store.id as number) || 0
+    const newArea = newAreas.get(store.id as number) || 0
     const stolenArea = Math.max(0, originalArea - newArea)
     
     if (stolenArea > 0) {
@@ -542,7 +542,7 @@ export function createInferredStore(
   const neighborIds = neighbors.slice(0, 5).map(n => n.storeId)
   
   return {
-    id: Date.now(),
+    id: Math.floor(Date.now() / 1000), // Ensure it's a number
     nombre: customName || `Tienda Proyectada ${new Date().toLocaleDateString('es-MX')}`,
     lat: position[0],
     lon: position[1],

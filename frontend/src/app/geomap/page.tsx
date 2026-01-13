@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { MapPin, ArrowLeft, Loader2, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { fetchStores, type Store } from '@/lib/api'
+import { fetchStores, type Store, addInferredStore as addInferredStoreSupabase } from '@/lib/supabase/api'
 import { 
   analyzeNewStoreLocation, 
   checkHeterogeneity, 
@@ -19,7 +19,6 @@ import {
 import { FileDropZone, ResultsDashboard, ControlPanel } from '@/components/geomap'
 import type { ParsedCoordinates } from '@/lib/kmzParser'
 import { useTheme } from '@/context/ThemeContext'
-import { addInferredStore } from '@/lib/inferredStoresPersistence'
 
 const VoronoiMap = dynamic(
   () => import('@/components/geomap/VoronoiMap'),
@@ -140,19 +139,23 @@ export default function GeoMapPage() {
     setIsStoreSaved(false)
   }, [])
 
-  const handleSaveStore = useCallback((storeName: string) => {
+  const handleSaveStore = useCallback(async (storeName: string) => {
     if (!newStorePosition || !analysisResult) return
 
     try {
-      addInferredStore(
-        newStorePosition,
-        analysisResult.parentStore,
-        analysisResult.parentDistance,
-        analysisResult.confidenceScore,
-        inferredData,
-        { ciudad: analysisResult.parentStore?.ciudad || undefined },
-        storeName
-      )
+      await addInferredStoreSupabase({
+        nombre: storeName,
+        latitud: newStorePosition[0],
+        longitud: newStorePosition[1],
+        confidence_score: analysisResult.confidenceScore as number,
+        parent_store_id: analysisResult.parentStore?.id as number,
+        parent_store_name: analysisResult.parentStore?.nombre,
+        inferred_data: inferredData as any,
+        metadata: { 
+          ciudad: analysisResult.parentStore?.ciudad || undefined,
+          parentDistance: analysisResult.parentDistance
+        } as any
+      })
       setIsStoreSaved(true)
       // Trigger refresh of inferred stores on map
       setInferredStoresRefresh(prev => prev + 1)
