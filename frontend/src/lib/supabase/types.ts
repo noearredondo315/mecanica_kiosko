@@ -6,7 +6,9 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type UserRole = 'admin' | 'write' | 'read'
+// Roles: admin (full access), write (can add stores), read (view only)
+// Legacy values 'editor' and 'viewer' are mapped to 'write' and 'read' respectively
+export type UserRole = 'admin' | 'write' | 'read' | 'editor' | 'viewer'
 
 export interface Database {
   public: {

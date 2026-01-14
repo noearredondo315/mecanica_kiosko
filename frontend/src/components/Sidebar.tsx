@@ -209,7 +209,7 @@ export default function Sidebar({
                 </p>
                 <p className="text-xs text-[rgb(var(--text-muted))] capitalize">
                   {profile.role === 'admin' ? '👑 Administrador' : 
-                   profile.role === 'write' ? '✏️ Editor' : '👁️ Solo lectura'}
+                   (profile.role === 'write' || profile.role === 'editor') ? '✏️ Editor' : '👁️ Solo lectura'}
                 </p>
               </div>
             </div>

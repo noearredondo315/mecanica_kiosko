@@ -113,17 +113,31 @@ export default function AdminPage() {
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
       case 'admin': return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-      case 'write': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      case 'read': return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      case 'write': 
+      case 'editor': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      case 'read': 
+      case 'viewer': return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
   }
 
   const getRoleLabel = (role: UserRole) => {
     switch (role) {
       case 'admin': return '👑 Admin'
-      case 'write': return '✏️ Editor'
-      case 'read': return '👁️ Lectura'
+      case 'write': 
+      case 'editor': return '✏️ Editor'
+      case 'read': 
+      case 'viewer': return '👁️ Lectura'
+      default: return role
     }
+  }
+  
+  // Normalize legacy role values to new values
+  const normalizeRole = (role: UserRole): 'admin' | 'write' | 'read' => {
+    if (role === 'editor') return 'write'
+    if (role === 'viewer') return 'read'
+    if (role === 'admin' || role === 'write' || role === 'read') return role
+    return 'read' // default
   }
 
   if (!isAdmin) {
@@ -265,7 +279,7 @@ export default function AdminPage() {
                       </td>
                       <td className="p-4">
                         <select
-                          value={user.role}
+                          value={normalizeRole(user.role)}
                           onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
                           disabled={user.id === profile?.id}
                           className={cn(
