@@ -1,9 +1,13 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
 import type { UserRole } from '@/lib/supabase/types'
+
+// Routes that require authentication
+const PROTECTED_ROUTES = ['/', '/geomap', '/admin']
 
 interface Profile {
   id: string
@@ -38,6 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
+  const router = useRouter()
+  const pathname = usePathname()
+  
   // Use singleton client
   const supabase = useMemo(() => createClient(), [])
 
@@ -68,6 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
+    // Helper to check if current path is protected
+    const isProtectedRoute = (path: string) => {
+      return PROTECTED_ROUTES.some(route => 
+        path === route || path.startsWith(route + '/')
+      )
+    }
+
     // Get initial session using getUser() for more reliable auth check
     const getInitialSession = async () => {
       try {
@@ -84,12 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (userError) {
             console.error('User validation error:', userError)
-            // Session might be invalid, clear it
+            // CRITICAL FIX: Session is invalid/expired - force signOut to clear cookies
+            // This prevents the "zombie session" where middleware thinks user is authenticated
+            // but client cannot restore session
+            await supabase.auth.signOut()
+            
             if (mounted) {
               setSession(null)
               setUser(null)
               setProfile(null)
               setIsLoading(false)
+              
+              // Redirect to login if on a protected route
+              if (isProtectedRoute(pathname)) {
+                router.replace('/login')
+              }
             }
             return
           }
@@ -99,6 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(currentUser)
             await fetchProfile(currentUser.id)
           }
+        } else {
+          // No session exists - redirect to login if on protected route
+          if (mounted && isProtectedRoute(pathname)) {
+            router.replace('/login')
+          }
         }
         
         if (mounted) {
@@ -106,8 +134,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('Error getting initial session:', err)
+        // On any error, clean up and redirect
+        try {
+          await supabase.auth.signOut()
+        } catch {}
+        
         if (mounted) {
+          setSession(null)
+          setUser(null)
+          setProfile(null)
           setIsLoading(false)
+          
+          if (isProtectedRoute(pathname)) {
+            router.replace('/login')
+          }
         }
       }
     }
@@ -147,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase, fetchProfile])
+  }, [supabase, fetchProfile, router, pathname])
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

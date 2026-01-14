@@ -1,6 +1,18 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Supabase Auth Middleware
+ * 
+ * STORAGE STRATEGY: Uses cookies (consistent with client.ts createBrowserClient)
+ * 
+ * VALIDATION: Uses getUser() instead of getSession() because:
+ * - getSession() only reads from storage (can return stale/invalid tokens)
+ * - getUser() validates the token with Supabase Auth server
+ * 
+ * If validation fails, the middleware allows the request but the client-side
+ * AuthContext will detect the invalid session and redirect to /login.
+ */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {

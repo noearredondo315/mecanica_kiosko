@@ -26,7 +26,7 @@ export default function Sidebar({
   onInferredStoresChange,
 }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { profile, signOut, canAccessGeomap, isAdmin } = useAuth()
+  const { profile, signOut, canAccessGeomap, isAdmin, isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [inferredStoresCount, setInferredStoresCount] = useState(0)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -36,17 +36,24 @@ export default function Sidebar({
 
   // Load inferred stores count from Supabase
   const refreshInferredCount = useCallback(async () => {
+    // Block API calls if not authenticated
+    if (!isAuthenticated) {
+      return
+    }
     try {
       const stores = await fetchInferredStores()
       setInferredStoresCount(stores.length)
     } catch (err) {
       console.error('Error fetching inferred count:', err)
     }
-  }, [])
+  }, [isAuthenticated])
 
+  // Only fetch inferred count when authenticated and auth is not loading
   useEffect(() => {
-    refreshInferredCount()
-  }, [refreshInferredCount])
+    if (isAuthenticated && !isAuthLoading) {
+      refreshInferredCount()
+    }
+  }, [refreshInferredCount, isAuthenticated, isAuthLoading])
 
   const handleExportClick = async () => {
     if (inferredStoresCount === 0) {
