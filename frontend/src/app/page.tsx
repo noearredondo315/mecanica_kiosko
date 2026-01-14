@@ -43,18 +43,7 @@ export default function DashboardPage() {
     search: searchQuery,
   }, { enabled: !isAuthLoading && isAuthenticated })
 
-  // Show loading state while auth is being verified
-  if (isAuthLoading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center bg-[rgb(var(--bg-primary))]">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-[rgb(var(--accent-primary))] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-[rgb(var(--text-secondary))]">Verificando sesión...</p>
-        </div>
-      </div>
-    )
-  }
-
+  // ALL HOOKS MUST BE BEFORE ANY EARLY RETURNS (React rules of hooks)
   const filteredStores = useMemo(() => {
     if (!storesData?.stores) return []
     if (!searchQuery.trim()) return storesData.stores
@@ -99,6 +88,18 @@ export default function DashboardPage() {
   const handleInferredStoresChange = useCallback(() => {
     setInferredStoresVersion(v => v + 1)
   }, [])
+
+  // Show loading state while auth is being verified (AFTER all hooks)
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[rgb(var(--bg-primary))]">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[rgb(var(--accent-primary))] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-[rgb(var(--text-secondary))]">Verificando sesión...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[rgb(var(--bg-primary))]">

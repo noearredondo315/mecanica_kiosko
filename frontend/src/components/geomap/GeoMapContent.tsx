@@ -75,18 +75,7 @@ export default function GeoMapContent() {
     enabled: !isAuthLoading && isAuthenticated, // Only fetch when authenticated
   })
 
-  // Show loading state while auth is being verified
-  if (isAuthLoading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center bg-slate-900">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
-          <p className="text-slate-400">Verificando sesión...</p>
-        </div>
-      </div>
-    )
-  }
-
+  // ALL HOOKS MUST BE BEFORE ANY EARLY RETURNS (React rules of hooks)
   const storePoints = useMemo(() => {
     if (!data?.stores) return []
     return data.stores
@@ -215,6 +204,18 @@ export default function GeoMapContent() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }, [analysisResult, newStorePosition, inferredData, heterogeneityAlert])
+
+  // Show loading state while auth is being verified (AFTER all hooks)
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-900">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
+          <p className="text-slate-400">Verificando sesión...</p>
+        </div>
+      </div>
+    )
+  }
 
   const bgPrimary = isDark ? 'rgb(2, 6, 23)' : 'rgb(248, 250, 252)'
   const bgSecondary = isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.95)'
