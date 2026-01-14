@@ -26,7 +26,7 @@ export default function Sidebar({
   onInferredStoresChange,
 }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { profile, signOut, canAccessGeomap, isAdmin } = useAuth()
+  const { user, profile, signOut, canAccessGeomap, isAdmin } = useAuth()
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [inferredStoresCount, setInferredStoresCount] = useState(0)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -191,8 +191,8 @@ export default function Sidebar({
         </p>
       </div>
 
-      {/* User Profile Section */}
-      {profile && (
+      {/* User Profile Section - Show if user exists, even if profile fetch failed */}
+      {user && (
         <div className="px-6 pb-4">
           <div className={cn(
             'p-3 rounded-xl flex items-center justify-between',
@@ -203,12 +203,13 @@ export default function Sidebar({
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-[rgb(var(--text-primary))]">
-                  {profile.full_name || profile.email?.split('@')[0]}
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[rgb(var(--text-primary))] truncate">
+                  {profile?.full_name || user.email?.split('@')[0]}
                 </p>
-                <p className="text-xs text-[rgb(var(--text-muted))] capitalize">
-                  {profile.role === 'admin' ? '👑 Administrador' : 
+                <p className="text-xs text-[rgb(var(--text-muted))] capitalize truncate">
+                  {!profile ? 'Cargando perfil...' : 
+                   profile.role === 'admin' ? '👑 Administrador' : 
                    (profile.role === 'write' || profile.role === 'editor') ? '✏️ Editor' : '👁️ Solo lectura'}
                 </p>
               </div>
@@ -216,7 +217,7 @@ export default function Sidebar({
             <button
               onClick={() => signOut()}
               className={cn(
-                'p-2 rounded-lg transition-colors',
+                'p-2 rounded-lg transition-colors shrink-0',
                 'hover:bg-red-500/20 text-[rgb(var(--text-muted))] hover:text-red-400'
               )}
               title="Cerrar sesión"

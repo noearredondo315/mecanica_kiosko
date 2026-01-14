@@ -71,8 +71,10 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
     
-    if (profile?.role === 'read') {
+    const role = profile?.role
+    if (role === 'read' || role === 'viewer') {
       // Read-only users cannot access geomap
+      console.log(`[Middleware] Blocking access to geomap for role: ${role}`)
       const url = request.nextUrl.clone()
       url.pathname = '/'
       return NextResponse.redirect(url)
@@ -89,6 +91,7 @@ export async function middleware(request: NextRequest) {
     
     if (profile?.role !== 'admin') {
       // Non-admin users cannot access admin panel
+      console.log(`[Middleware] Blocking access to admin for role: ${profile?.role}`)
       const url = request.nextUrl.clone()
       url.pathname = '/'
       return NextResponse.redirect(url)

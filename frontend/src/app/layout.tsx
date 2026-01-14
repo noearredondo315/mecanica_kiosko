@@ -3,13 +3,34 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 import { ThemeProvider } from '@/context/ThemeContext'
-import { AuthProvider } from '@/context/AuthContext'
+import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { Loader2 } from 'lucide-react'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'GEOMAP | NAB - Suelos y Control',
   description: 'Análisis geoespacial de la red de tiendas KIOSKO',
+}
+
+function AppContent({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 mb-6 shadow-lg shadow-blue-500/20">
+          <span className="text-2xl font-bold">MK</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+          <p className="text-slate-400 font-medium tracking-wide">Iniciando sistema...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return <>{children}</>
 }
 
 export default function RootLayout({
@@ -39,7 +60,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <Providers>
-              {children}
+              <AppContent>{children}</AppContent>
             </Providers>
           </ThemeProvider>
         </AuthProvider>
