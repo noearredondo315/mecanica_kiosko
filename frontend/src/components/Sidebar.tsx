@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, X, Sun, Moon, MapPin, Grid3X3, ArrowRight, Download, Upload, FolderOpen, CheckCircle, AlertCircle, Table, LogOut, User } from 'lucide-react'
+import { Search, X, Sun, Moon, MapPin, Grid3X3, ArrowRight, Download, Upload, FolderOpen, CheckCircle, AlertCircle, Table, LogOut, User, PanelLeftClose, PanelLeft } from 'lucide-react'
 import InferredStoresTable from './InferredStoresTable'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
@@ -17,6 +17,8 @@ interface SidebarProps {
   onSearchChange: (value: string) => void
   totalStores: number
   onInferredStoresChange?: () => void
+  isCollapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
 export default function Sidebar({
@@ -24,6 +26,8 @@ export default function Sidebar({
   onSearchChange,
   totalStores,
   onInferredStoresChange,
+  isCollapsed = false,
+  onToggleCollapse,
 }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
   const { profile, signOut, canAccessGeomap, isAdmin, isAuthenticated, isLoading: isAuthLoading } = useAuth()
@@ -147,6 +151,25 @@ export default function Sidebar({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  // If collapsed, show minimal sidebar with just toggle button
+  if (isCollapsed) {
+    return (
+      <aside className="w-14 glass-sidebar h-full flex flex-col items-center py-4">
+        <button
+          onClick={onToggleCollapse}
+          className={cn(
+            'p-2 rounded-lg transition-all duration-300',
+            'bg-[rgba(var(--glass-bg))] hover:bg-[rgba(var(--card-bg))]',
+            'border border-[rgba(var(--border-color))]'
+          )}
+          title="Expandir sidebar"
+        >
+          <PanelLeft className="w-5 h-5 text-[rgb(var(--text-secondary))]" />
+        </button>
+      </aside>
+    )
+  }
+
   return (
     <aside className="w-80 glass-sidebar h-full flex flex-col">
       {/* Logos */}
@@ -176,63 +199,44 @@ export default function Sidebar({
             GEOMAP
           </h1>
           
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={cn(
-              'p-2 rounded-lg transition-all duration-300',
-              'bg-[rgba(var(--glass-bg))] hover:bg-[rgba(var(--card-bg))]',
-              'border border-[rgba(var(--border-color))]'
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                'p-2 rounded-lg transition-all duration-300',
+                'bg-[rgba(var(--glass-bg))] hover:bg-[rgba(var(--card-bg))]',
+                'border border-[rgba(var(--border-color))]'
+              )}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-500" />
+              )}
+            </button>
+            
+            {/* Collapse Toggle */}
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                className={cn(
+                  'p-2 rounded-lg transition-all duration-300',
+                  'bg-[rgba(var(--glass-bg))] hover:bg-[rgba(var(--card-bg))]',
+                  'border border-[rgba(var(--border-color))]'
+                )}
+                title="Minimizar sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4 text-[rgb(var(--text-secondary))]" />
+              </button>
             )}
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-500" />
-            )}
-          </button>
+          </div>
         </div>
         <p className="text-sm text-[rgb(var(--text-secondary))]">
           NAB - Suelos y Control
         </p>
       </div>
-
-      {/* User Profile Section */}
-      {profile && (
-        <div className="px-6 pb-4">
-          <div className={cn(
-            'p-3 rounded-xl flex items-center justify-between',
-            'bg-gradient-to-r from-blue-500/10 to-cyan-500/10',
-            'border border-blue-500/20'
-          )}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[rgb(var(--text-primary))]">
-                  {profile.full_name || profile.email?.split('@')[0]}
-                </p>
-                <p className="text-xs text-[rgb(var(--text-muted))] capitalize">
-                  {profile.role === 'admin' ? '👑 Administrador' : 
-                   (profile.role === 'write' || profile.role === 'editor') ? '✏️ Editor' : '👁️ Solo lectura'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => signOut()}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                'hover:bg-red-500/20 text-[rgb(var(--text-muted))] hover:text-red-400'
-              )}
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Search */}
       <div className="p-6">
@@ -490,6 +494,42 @@ export default function Sidebar({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* User Profile Section - Now at bottom */}
+      {profile && (
+        <div className="px-6 py-4 border-t border-[rgba(var(--border-color))]">
+          <div className={cn(
+            'p-3 rounded-xl flex items-center justify-between',
+            'bg-gradient-to-r from-blue-500/10 to-cyan-500/10',
+            'border border-blue-500/20'
+          )}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[rgb(var(--text-primary))]">
+                  {profile.full_name || profile.email?.split('@')[0]}
+                </p>
+                <p className="text-xs text-[rgb(var(--text-muted))] capitalize">
+                  {profile.role === 'admin' ? '👑 Administrador' : 
+                   (profile.role === 'write' || profile.role === 'editor') ? '✏️ Editor' : '👁️ Solo lectura'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => signOut()}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                'hover:bg-red-500/20 text-[rgb(var(--text-muted))] hover:text-red-400'
+              )}
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Footer Stats */}
       <div className="p-6 border-t border-[rgba(var(--border-color))]">

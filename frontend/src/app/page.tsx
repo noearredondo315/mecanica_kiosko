@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null)
   const [selectedInferredStore, setSelectedInferredStore] = useState<InferredStore | null>(null)
   const [inferredStoresVersion, setInferredStoresVersion] = useState(0)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   // Only fetch stores when auth is ready and user is authenticated
   const { data: storesData, isLoading: isLoadingStores, error: fetchError } = useStores({
@@ -108,6 +109,8 @@ export default function DashboardPage() {
         onSearchChange={setSearchQuery}
         totalStores={filteredStores.length}
         onInferredStoresChange={handleInferredStoresChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       <main className="flex-1 relative">

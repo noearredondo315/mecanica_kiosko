@@ -38,6 +38,8 @@ export default function AdminPage() {
   const [newPassword, setNewPassword] = useState('')
   const [newFullName, setNewFullName] = useState('')
   const [newRole, setNewRole] = useState<UserRole>('read')
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
+  const [updateError, setUpdateError] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -100,13 +102,30 @@ export default function AdminPage() {
   }
 
   const handleUpdateRole = async (userId: string, newRole: UserRole) => {
-    const { error } = await (supabase
-      .from('profiles') as any)
-      .update({ role: newRole })
-      .eq('id', userId)
+    setUpdatingUserId(userId)
+    setUpdateError(null)
+    
+    try {
+      const { error } = await (supabase
+        .from('profiles') as any)
+        .update({ role: newRole })
+        .eq('id', userId)
 
-    if (!error) {
-      fetchUsers()
+      if (error) {
+        console.error('Error updating role:', error)
+        setUpdateError(`Error al actualizar rol: ${error.message}`)
+        setTimeout(() => setUpdateError(null), 4000)
+      } else {
+        setCreateSuccess(`Rol actualizado exitosamente`)
+        setTimeout(() => setCreateSuccess(null), 3000)
+        await fetchUsers()
+      }
+    } catch (err) {
+      console.error('Error updating role:', err)
+      setUpdateError('Error al actualizar el rol')
+      setTimeout(() => setUpdateError(null), 4000)
+    } finally {
+      setUpdatingUserId(null)
     }
   }
 
@@ -227,6 +246,20 @@ export default function AdminPage() {
               </button>
             </motion.div>
           )}
+          {updateError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-400" />
+              <p className="text-red-400">{updateError}</p>
+              <button onClick={() => setUpdateError(null)} className="ml-auto">
+                <X className="w-4 h-4 text-red-400" />
+              </button>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Users Table */}
@@ -278,21 +311,26 @@ export default function AdminPage() {
                         {user.email}
                       </td>
                       <td className="p-4">
-                        <select
-                          value={normalizeRole(user.role)}
-                          onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
-                          disabled={user.id === profile?.id}
-                          className={cn(
-                            'px-3 py-1 rounded-lg border text-sm font-medium',
-                            'bg-transparent cursor-pointer',
-                            getRoleBadgeColor(user.role),
-                            user.id === profile?.id && 'opacity-50 cursor-not-allowed'
+                        <div className="relative inline-block">
+                          <select
+                            value={normalizeRole(user.role)}
+                            onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
+                            disabled={user.id === profile?.id || updatingUserId === user.id}
+                            className={cn(
+                              'px-3 py-1 rounded-lg border text-sm font-medium',
+                              'bg-transparent cursor-pointer appearance-none pr-8',
+                              getRoleBadgeColor(user.role),
+                              (user.id === profile?.id || updatingUserId === user.id) && 'opacity-50 cursor-not-allowed'
+                            )}
+                          >
+                            <option value="admin">👑 Admin</option>
+                            <option value="write">✏️ Editor</option>
+                            <option value="read">👁️ Lectura</option>
+                          </select>
+                          {updatingUserId === user.id && (
+                            <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-purple-400" />
                           )}
-                        >
-                          <option value="admin">👑 Admin</option>
-                          <option value="write">✏️ Editor</option>
-                          <option value="read">👁️ Lectura</option>
-                        </select>
+                        </div>
                       </td>
                       <td className="p-4" style={{ color: textMuted }}>
                         {new Date(user.created_at).toLocaleDateString('es-MX')}

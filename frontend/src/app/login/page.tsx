@@ -156,14 +156,14 @@ export default function LoginPage() {
           {/* Contact Admin Message */}
           <div className="mt-6 text-center">
             <p className="text-slate-400 text-sm">
-              ¿Necesitas acceso? Contacta al administrador del sistema.
+              Para registrarse favor de solicitar acceso al administrador.
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <p className="text-center text-slate-500 text-xs mt-6">
-          © 2026 MecánicaKIOSKO. Todos los derechos reservados.
+          © 2026 SYC KIOSKO. NAB. 
         </p>
       </motion.div>
     </div>
