@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = useMemo(() => createClient(), [])
 
   const fetchProfile = useCallback(async (userId: string) => {
+    console.log('[Auth] Fetching profile for user:', userId)
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -57,12 +58,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
       
       if (data && !error) {
-        setProfile(data as Profile)
+        const profileData = data as Profile
+        console.log('[Auth] Profile fetched successfully:', { role: profileData.role, email: profileData.email })
+        setProfile(profileData)
       } else if (error) {
-        console.error('Error fetching profile:', error)
+        console.error('[Auth] Error fetching profile:', error)
+        // Profile fetch failed but user is authenticated - set a default profile
+        // This prevents the UI from being empty
+        setProfile({
+          id: userId,
+          email: null,
+          full_name: null,
+          role: 'read' as UserRole,
+          avatar_url: null
+        })
       }
     } catch (err) {
-      console.error('Error fetching profile:', err)
+      console.error('[Auth] Error fetching profile:', err)
     }
   }, [supabase])
 
@@ -84,23 +96,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Get initial session using getUser() for more reliable auth check
     const getInitialSession = async () => {
+      console.log('[Auth] Starting session rehydration...')
+      
       try {
-        // First try to get the session
+        // First try to get the session from cookies
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
         
+        console.log('[Auth] getSession result:', { 
+          hasSession: !!currentSession, 
+          error: sessionError?.message 
+        })
+        
         if (sessionError) {
-          console.error('Session error:', sessionError)
+          console.error('[Auth] Session error:', sessionError)
         }
 
         if (currentSession) {
-          // Validate session with getUser() - this is more reliable
+          // Validate session with getUser() - this makes a server call to verify the token
+          console.log('[Auth] Validating session with getUser()...')
           const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
           
+          console.log('[Auth] getUser result:', { 
+            hasUser: !!currentUser, 
+            userId: currentUser?.id,
+            error: userError?.message 
+          })
+          
           if (userError) {
-            console.error('User validation error:', userError)
+            console.error('[Auth] User validation error:', userError)
             // CRITICAL FIX: Session is invalid/expired - force signOut to clear cookies
-            // This prevents the "zombie session" where middleware thinks user is authenticated
-            // but client cannot restore session
+            console.log('[Auth] Forcing signOut due to invalid session...')
             await supabase.auth.signOut()
             
             if (mounted) {
@@ -111,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               
               // Redirect to login if on a protected route
               if (isProtectedRoute(pathname)) {
+                console.log('[Auth] Redirecting to /login (invalid session on protected route)')
                 router.replace('/login')
               }
             }
@@ -118,13 +144,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (currentUser && mounted) {
+            console.log('[Auth] Session valid, fetching profile...')
             setSession(currentSession)
             setUser(currentUser)
             await fetchProfile(currentUser.id)
+            console.log('[Auth] Session rehydration complete')
           }
         } else {
+          console.log('[Auth] No session found')
           // No session exists - redirect to login if on protected route
           if (mounted && isProtectedRoute(pathname)) {
+            console.log('[Auth] Redirecting to /login (no session on protected route)')
             router.replace('/login')
           }
         }
@@ -133,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoading(false)
         }
       } catch (err) {
-        console.error('Error getting initial session:', err)
+        console.error('[Auth] Error getting initial session:', err)
         // On any error, clean up and redirect
         try {
           await supabase.auth.signOut()

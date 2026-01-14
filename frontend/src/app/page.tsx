@@ -43,6 +43,18 @@ export default function DashboardPage() {
     search: searchQuery,
   }, { enabled: !isAuthLoading && isAuthenticated })
 
+  // Show loading state while auth is being verified
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[rgb(var(--bg-primary))]">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[rgb(var(--accent-primary))] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-[rgb(var(--text-secondary))]">Verificando sesión...</p>
+        </div>
+      </div>
+    )
+  }
+
   const filteredStores = useMemo(() => {
     if (!storesData?.stores) return []
     if (!searchQuery.trim()) return storesData.stores

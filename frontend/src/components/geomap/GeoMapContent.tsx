@@ -16,6 +16,7 @@ import type {
 import { FileDropZone, ResultsDashboard, ControlPanel } from '@/components/geomap'
 import type { ParsedCoordinates } from '@/lib/kmzParser'
 import { useTheme } from '@/context/ThemeContext'
+import { useAuth } from '@/context/AuthContext'
 
 const VoronoiMap = dynamic(
   () => import('@/components/geomap/VoronoiMap'),
@@ -53,6 +54,7 @@ function storeToStorePoint(store: Store): StorePoint | null {
 }
 
 export default function GeoMapContent() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const [newStorePosition, setNewStorePosition] = useState<[number, number] | null>(null)
   const [showVoronoi, setShowVoronoi] = useState(true)
   const [voronoiOpacity, setVoronoiOpacity] = useState(0.15)
@@ -70,7 +72,20 @@ export default function GeoMapContent() {
     queryKey: ['stores-geomap'],
     queryFn: () => fetchStores(),
     staleTime: 5 * 60 * 1000,
+    enabled: !isAuthLoading && isAuthenticated, // Only fetch when authenticated
   })
+
+  // Show loading state while auth is being verified
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-900">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
+          <p className="text-slate-400">Verificando sesión...</p>
+        </div>
+      </div>
+    )
+  }
 
   const storePoints = useMemo(() => {
     if (!data?.stores) return []
