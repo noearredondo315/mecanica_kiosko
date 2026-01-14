@@ -85,6 +85,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
+    const applySession = async (nextSession: Session | null) => {
+      if (!mounted) return
+
+      setSession(nextSession)
+      setUser(nextSession?.user ?? null)
+
+      if (nextSession?.user) {
+        await fetchProfile(nextSession.user.id)
+        return
+      }
+
+      if (nextSession) {
+        const { data: { user: fetchedUser }, error: userError } = await supabase.auth.getUser()
+
+        if (userError) {
+          console.warn('[AuthContext] Could not fetch user details:', userError)
+          return
+        }
+
+        if (fetchedUser) {
+          setUser(fetchedUser)
+          await fetchProfile(fetchedUser.id)
+        }
+      }
+    }
+
     const initializeAuth = async () => {
       try {
         console.log('[AuthContext] Initializing session...')
@@ -97,29 +123,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (initialSession && mounted) {
-          console.log('[AuthContext] Session found for:', initialSession.user.email)
-          setSession(initialSession)
-          setUser(initialSession.user)
-          
-          // Validate with getUser() to ensure the token is still valid
-          const { data: { user: validatedUser }, error: userError } = await supabase.auth.getUser()
-          
-          if (userError || !validatedUser) {
-            console.error('[AuthContext] User validation failed on refresh:', userError)
-            if (mounted) {
-              setSession(null)
-              setUser(null)
-              setProfile(null)
-            }
-          } else {
-            console.log('[AuthContext] User validated successfully:', validatedUser.email)
-            if (mounted) {
-              setUser(validatedUser)
-              await fetchProfile(validatedUser.id)
-            }
-          }
+          console.log('[AuthContext] Session found for:', initialSession.user?.email ?? 'unknown user')
+          await applySession(initialSession)
         } else {
           console.log('[AuthContext] No initial session found on mount')
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+
+          if (refreshError) {
+            console.warn('[AuthContext] Session refresh failed:', refreshError)
+          }
+
+          if (refreshedSession) {
+            console.log('[AuthContext] Session refreshed from storage')
+            await applySession(refreshedSession)
+          }
         }
       } catch (err) {
         console.error('[AuthContext] Unexpected error during initialization:', err)
@@ -148,11 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        if (newSession?.user) {
-          console.log('[AuthContext] User update from listener:', newSession.user.email)
-          setSession(newSession)
-          setUser(newSession.user)
-          await fetchProfile(newSession.user.id)
+        if (newSession) {
+          await applySession(newSession)
         } else if (event === 'INITIAL_SESSION') {
           // This handles cases where initializeAuth might have missed it or they are tied
           setIsLoading(false)
@@ -201,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canWrite = profile?.role === 'admin' || profile?.role === 'write' || profile?.role === 'editor'
   const canDelete = profile?.role === 'admin' // Only admin can delete
   const canAccessGeomap = profile?.role === 'admin' || profile?.role === 'write' || profile?.role === 'editor'
-  const isAuthenticated = !!user && !!session
+  const isAuthenticated = !!session
 
   return (
     <AuthContext.Provider

@@ -240,8 +240,8 @@ export default function Sidebar({
         )}
       </AnimatePresence>
 
-      {/* User Profile Section - Show if user exists, even if profile fetch failed */}
-      {user && (
+      {/* User Profile Section - Show if session exists, even if user/profile fetch failed */}
+      {(user || session) && (
         <div className="px-6 pb-4">
           <div className={cn(
             'p-3 rounded-xl flex items-center justify-between',
@@ -254,10 +254,11 @@ export default function Sidebar({
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[rgb(var(--text-primary))] truncate">
-                  {profile?.full_name || user.email?.split('@')[0]}
+                  {profile?.full_name || user?.email?.split('@')[0] || 'Sesión activa'}
                 </p>
                 <p className="text-xs text-[rgb(var(--text-muted))] capitalize truncate">
-                  {!profile ? 'Cargando perfil...' : 
+                  {!profile && user ? 'Cargando perfil...' : 
+                   !profile && !user ? 'Perfil no disponible' :
                    profile.role === 'admin' ? '👑 Administrador' : 
                    (profile.role === 'write' || profile.role === 'editor') ? '✏️ Editor' : '👁️ Solo lectura'}
                 </p>
