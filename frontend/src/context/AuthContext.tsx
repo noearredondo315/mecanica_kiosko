@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
@@ -41,6 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Flag to prevent onAuthStateChange from interfering during initial hydration
+  const isInitializingRef = useRef(true)
   
   const router = useRouter()
   const pathname = usePathname()
@@ -97,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get initial session using getUser() for more reliable auth check
     const getInitialSession = async () => {
       console.log('[Auth] Starting session rehydration...')
+      isInitializingRef.current = true
       
       try {
         // First try to get the session from cookies
@@ -158,10 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             router.replace('/login')
           }
         }
-        
-        if (mounted) {
-          setIsLoading(false)
-        }
       } catch (err) {
         console.error('[Auth] Error getting initial session:', err)
         // On any error, clean up and redirect
@@ -173,43 +173,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null)
           setUser(null)
           setProfile(null)
-          setIsLoading(false)
           
           if (isProtectedRoute(pathname)) {
             router.replace('/login')
           }
+        }
+      } finally {
+        // CRITICAL: Always set loading to false and mark initialization complete
+        console.log('[Auth] Initialization complete, setting isLoading=false')
+        isInitializingRef.current = false
+        if (mounted) {
+          setIsLoading(false)
         }
       }
     }
 
     getInitialSession()
 
-    // Listen for auth changes
+    // Listen for auth changes AFTER initialization
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return
         
-        console.log('Auth state change:', event)
+        console.log('[Auth] Auth state change:', event, '| isInitializing:', isInitializingRef.current)
+        
+        // CRITICAL: Ignore events during initialization to prevent race conditions
+        // The getInitialSession() function handles the initial state
+        if (isInitializingRef.current && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
+          console.log('[Auth] Ignoring event during initialization')
+          return
+        }
         
         if (event === 'SIGNED_OUT') {
           setSession(null)
           setUser(null)
           setProfile(null)
           setIsLoading(false)
+          router.replace('/login')
           return
         }
 
+        // Handle post-initialization events (actual sign in after logout, token refresh, etc.)
         if (newSession?.user) {
+          console.log('[Auth] Processing auth change for user:', newSession.user.id)
           setSession(newSession)
           setUser(newSession.user)
           await fetchProfile(newSession.user.id)
-        } else {
-          setSession(null)
-          setUser(null)
-          setProfile(null)
+          setIsLoading(false)
         }
-        
-        setIsLoading(false)
       }
     )
 
