@@ -43,13 +43,17 @@ export default function AdminPage() {
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true)
+    console.log('[AdminPage] Fetching users...')
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false })
     
     if (data && !error) {
+      console.log(`[AdminPage] Found ${data.length} users`)
       setUsers(data as UserProfile[])
+    } else if (error) {
+      console.error('[AdminPage] Error fetching users:', error)
     }
     setIsLoading(false)
   }, [supabase])
@@ -100,12 +104,23 @@ export default function AdminPage() {
   }
 
   const handleUpdateRole = async (userId: string, newRole: UserRole) => {
+    // Prevent self-demotion without confirmation
+    if (userId === profile?.id && newRole !== 'admin') {
+      const confirm = window.confirm('¿Estás seguro de que quieres quitarte los permisos de administrador? Perderás el acceso a esta página.')
+      if (!confirm) return
+    }
+
+    console.log(`[AdminPage] Updating role for ${userId} to ${newRole}`)
     const { error } = await (supabase
       .from('profiles') as any)
       .update({ role: newRole })
       .eq('id', userId)
 
-    if (!error) {
+    if (error) {
+      console.error('[AdminPage] Error updating role:', error)
+      alert('Error al actualizar el rol: ' + error.message)
+    } else {
+      console.log('[AdminPage] Role updated successfully')
       fetchUsers()
     }
   }

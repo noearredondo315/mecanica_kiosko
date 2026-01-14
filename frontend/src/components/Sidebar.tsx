@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, X, Sun, Moon, MapPin, Grid3X3, ArrowRight, Download, Upload, FolderOpen, CheckCircle, AlertCircle, Table, LogOut, User } from 'lucide-react'
@@ -26,7 +27,18 @@ export default function Sidebar({
   onInferredStoresChange,
 }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { user, profile, signOut, canAccessGeomap, isAdmin } = useAuth()
+  const { user, profile, signOut, canAccessGeomap, isAdmin, session, isLoading } = useAuth()
+  const [debugMode, setDebugMode] = useState(false)
+  const [clickCount, setClickCount] = useState(0)
+
+  const handleLogoClick = () => {
+    const newCount = clickCount + 1
+    setClickCount(newCount)
+    if (newCount >= 5) {
+      setDebugMode(!debugMode)
+      setClickCount(0)
+    }
+  }
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [inferredStoresCount, setInferredStoresCount] = useState(0)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -165,7 +177,10 @@ export default function Sidebar({
       {/* Header */}
       <div className="p-6 border-b border-[rgba(var(--border-color))]">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-2xl font-black tracking-tight text-[rgb(var(--text-primary))]">
+          <h1 
+            onClick={handleLogoClick}
+            className="text-2xl font-black tracking-tight text-[rgb(var(--text-primary))] cursor-pointer select-none"
+          >
             GEOMAP
           </h1>
           
@@ -190,6 +205,40 @@ export default function Sidebar({
           NAB - Suelos y Control
         </p>
       </div>
+
+      {/* Auth Debug Panel (Hidden by default) */}
+      <AnimatePresence>
+        {debugMode && (
+          <div className="px-6 py-4 bg-slate-900/90 border-b border-blue-500/30 overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest">Auth Debug</h3>
+              <button 
+                onClick={() => setDebugMode(false)}
+                className="text-slate-500 hover:text-white"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="space-y-1 font-mono text-[10px] text-slate-300">
+              <p><span className="text-blue-400">Loading:</span> {isLoading ? 'TRUE' : 'FALSE'}</p>
+              <p><span className="text-blue-400">User:</span> {user ? user.email : 'NONE'}</p>
+              <p><span className="text-blue-400">Role:</span> {profile?.role || 'NONE'}</p>
+              <p><span className="text-blue-400">Sess:</span> {session ? 'ACTIVE' : 'NONE'}</p>
+              <div className="pt-2">
+                <button
+                  onClick={async () => {
+                    await signOut()
+                    window.location.reload()
+                  }}
+                  className="w-full py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 rounded text-[9px] font-bold uppercase"
+                >
+                  Limpiar Sesión
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* User Profile Section - Show if user exists, even if profile fetch failed */}
       {user && (
