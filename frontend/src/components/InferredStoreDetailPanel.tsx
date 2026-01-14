@@ -11,6 +11,8 @@ interface InferredStoreDetailPanelProps {
   onClose: () => void
   onDelete?: (id: string) => void
   onEdit?: (id: string, newName: string) => void
+  canDelete?: boolean
+  canEdit?: boolean
 }
 
 function Section({ 
@@ -100,7 +102,9 @@ export default function InferredStoreDetailPanel({
   store, 
   onClose,
   onDelete,
-  onEdit
+  onEdit,
+  canDelete = false,
+  canEdit = false
 }: InferredStoreDetailPanelProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
@@ -181,7 +185,7 @@ export default function InferredStoreDetailPanel({
               </p>
             </div>
             <div className="flex gap-1">
-              {onEdit && !isEditing && (
+              {canEdit && onEdit && !isEditing && (
                 <button 
                   onClick={handleStartEdit}
                   className="p-2 rounded-lg shrink-0 bg-[rgba(var(--glass-bg))] hover:bg-orange-500/20 border border-[rgba(var(--border-color))] transition-colors"
@@ -189,7 +193,7 @@ export default function InferredStoreDetailPanel({
                   <Edit3 className="w-4 h-4 text-orange-400" />
                 </button>
               )}
-              {onDelete && (
+              {canDelete && onDelete && (
                 <button 
                   onClick={() => setShowDeleteConfirm(true)}
                   className="p-2 rounded-lg shrink-0 bg-[rgba(var(--glass-bg))] hover:bg-red-500/20 border border-[rgba(var(--border-color))] transition-colors"

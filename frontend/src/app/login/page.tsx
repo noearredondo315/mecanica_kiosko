@@ -153,16 +153,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Sign Up Link */}
+          {/* Contact Admin Message */}
           <div className="mt-6 text-center">
             <p className="text-slate-400 text-sm">
-              ¿No tienes cuenta?{' '}
-              <Link 
-                href="/signup" 
-                className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
-              >
-                Regístrate
-              </Link>
+              ¿Necesitas acceso? Contacta al administrador del sistema.
             </p>
           </div>
         </div>

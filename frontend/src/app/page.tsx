@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import StoreDetailPanel from '@/components/StoreDetailPanel'
 import InferredStoreDetailPanel from '@/components/InferredStoreDetailPanel'
 import { useStores } from '@/hooks/useStores'
+import { useAuth } from '@/context/AuthContext'
 import { 
   fetchInferredStores, 
   updateInferredStore,
@@ -28,17 +29,19 @@ const StoreMap = dynamic(() => import('@/components/StoreMap'), {
 })
 
 export default function DashboardPage() {
+  const { isAuthenticated, isLoading: isAuthLoading, canDelete, canWrite } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStore, setSelectedStore] = useState<Store | null>(null)
   const [selectedInferredStore, setSelectedInferredStore] = useState<InferredStore | null>(null)
   const [inferredStoresVersion, setInferredStoresVersion] = useState(0)
 
+  // Only fetch stores when auth is ready and user is authenticated
   const { data: storesData, isLoading: isLoadingStores, error: fetchError } = useStores({
     years: [],
     cities: [],
     errorsOnly: false,
     search: searchQuery,
-  })
+  }, { enabled: !isAuthLoading && isAuthenticated })
 
   const filteredStores = useMemo(() => {
     if (!storesData?.stores) return []
@@ -70,10 +73,11 @@ export default function DashboardPage() {
   }, [])
 
   const handleDeleteInferredStore = useCallback((id: string) => {
+    if (!canDelete) return // Only admin can delete
     deleteInferredStore(id)
     setSelectedInferredStore(null)
     setInferredStoresVersion(v => v + 1)
-  }, [])
+  }, [canDelete])
 
   const handleEditInferredStore = useCallback(async (id: string, newName: string) => {
     await updateInferredStore(id, { nombre: newName })
@@ -114,6 +118,8 @@ export default function DashboardPage() {
         onClose={handleCloseInferredDetail}
         onDelete={handleDeleteInferredStore}
         onEdit={handleEditInferredStore}
+        canDelete={canDelete}
+        canEdit={canWrite}
       />
     </div>
   )

@@ -18,12 +18,15 @@ interface AuthContextType {
   profile: Profile | null
   session: Session | null
   isLoading: boolean
+  isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
+  // Role checks
   isAdmin: boolean
-  isEditor: boolean
-  canEdit: boolean
+  canWrite: boolean
+  canDelete: boolean
+  canAccessGeomap: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -113,9 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
   }
 
+  // Role-based permission checks
   const isAdmin = profile?.role === 'admin'
-  const isEditor = profile?.role === 'editor'
-  const canEdit = isAdmin || isEditor
+  const canWrite = profile?.role === 'admin' || profile?.role === 'write'
+  const canDelete = profile?.role === 'admin' // Only admin can delete
+  const canAccessGeomap = profile?.role === 'admin' || profile?.role === 'write'
+  const isAuthenticated = !!user && !!session
 
   return (
     <AuthContext.Provider
@@ -124,12 +130,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         session,
         isLoading,
+        isAuthenticated,
         signIn,
         signUp,
         signOut,
         isAdmin,
-        isEditor,
-        canEdit,
+        canWrite,
+        canDelete,
+        canAccessGeomap,
       }}
     >
       {children}

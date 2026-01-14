@@ -26,7 +26,7 @@ export default function Sidebar({
   onInferredStoresChange,
 }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, canAccessGeomap, isAdmin } = useAuth()
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [inferredStoresCount, setInferredStoresCount] = useState(0)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -209,7 +209,7 @@ export default function Sidebar({
                 </p>
                 <p className="text-xs text-[rgb(var(--text-muted))] capitalize">
                   {profile.role === 'admin' ? '👑 Administrador' : 
-                   profile.role === 'editor' ? '✏️ Editor' : '👁️ Visor'}
+                   profile.role === 'write' ? '✏️ Editor' : '👁️ Solo lectura'}
                 </p>
               </div>
             </div>
@@ -255,33 +255,65 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* GEOMAP Thiessen Link */}
-      <div className="px-6 pb-4">
-        <Link
-          href="/geomap"
-          className={cn(
-            'flex items-center justify-between p-4 rounded-xl',
-            'bg-gradient-to-r from-blue-600/20 to-purple-600/20',
-            'border border-blue-500/30 hover:border-blue-500/50',
-            'transition-all duration-300 group'
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/20">
-              <Grid3X3 className="w-5 h-5 text-blue-400" />
+      {/* GEOMAP Thiessen Link - Only for admin and write roles */}
+      {canAccessGeomap && (
+        <div className="px-6 pb-4">
+          <Link
+            href="/geomap"
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl',
+              'bg-gradient-to-r from-blue-600/20 to-purple-600/20',
+              'border border-blue-500/30 hover:border-blue-500/50',
+              'transition-all duration-300 group'
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Grid3X3 className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[rgb(var(--text-primary))]">
+                  Agregar nueva tienda
+                </p>
+                <p className="text-xs text-[rgb(var(--text-secondary))]">
+                  Análisis de Polígonos de Thiessen
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-[rgb(var(--text-primary))]">
-                Agregar nueva tienda
-              </p>
-              <p className="text-xs text-[rgb(var(--text-secondary))]">
-                Análisis de Polígonos de Thiessen
-              </p>
+            <ArrowRight className="w-4 h-4 text-blue-400 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+      )}
+
+      {/* Admin Panel Link - Only for admin users */}
+      {isAdmin && (
+        <div className="px-6 pb-4">
+          <Link
+            href="/admin"
+            className={cn(
+              'flex items-center justify-between p-4 rounded-xl',
+              'bg-gradient-to-r from-purple-600/20 to-pink-600/20',
+              'border border-purple-500/30 hover:border-purple-500/50',
+              'transition-all duration-300 group'
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <User className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[rgb(var(--text-primary))]">
+                  Gestión de Usuarios
+                </p>
+                <p className="text-xs text-[rgb(var(--text-secondary))]">
+                  Panel de Administración
+                </p>
+              </div>
             </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-blue-400 group-hover:translate-x-1 transition-transform" />
-        </Link>
-      </div>
+            <ArrowRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+      )}
 
       {/* Gestión de Datos - Import/Export */}
       <div className="px-6 pb-4">
