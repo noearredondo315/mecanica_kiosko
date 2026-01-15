@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Store, InferredStore } from '@/lib/supabase/api'
+import type { Store, InferredStoreWithUser } from '@/lib/supabase/api'
 import { useTheme } from '@/context/ThemeContext'
 import L from 'leaflet'
 import 'leaflet.markercluster'
@@ -11,7 +11,7 @@ interface StoreMapProps {
   stores: Store[]
   selectedStore: Store | null
   onStoreSelect: (store: Store) => void
-  onInferredStoreSelect?: (store: InferredStore) => void
+  onInferredStoreSelect?: (store: InferredStoreWithUser) => void
   isLoading?: boolean
   inferredStoresRefresh?: number
 }
@@ -34,14 +34,14 @@ export default function StoreMap({
   const inferredMarkersRef = useRef<L.LayerGroup | null>(null)
   const storeMarkersRef = useRef<Map<number, L.Marker>>(new Map())
   const tileLayerRef = useRef<L.TileLayer | null>(null)
-  const [savedInferredStores, setSavedInferredStores] = useState<InferredStore[]>([])
+  const [savedInferredStores, setSavedInferredStores] = useState<InferredStoreWithUser[]>([])
 
-  // Load inferred stores from Supabase
+  // Load inferred stores from Supabase with user info
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { fetchInferredStores } = await import('@/lib/supabase/api')
-        const stores = await fetchInferredStores()
+        const { fetchInferredStoresWithUser } = await import('@/lib/supabase/api')
+        const stores = await fetchInferredStoresWithUser()
         setSavedInferredStores(stores)
       } catch (err) {
         console.error('Error loading inferred stores:', err)
@@ -264,6 +264,13 @@ export default function StoreMap({
             <div class="tooltip-row">
               <span class="tooltip-label">Qadm est.:</span>
               <span class="tooltip-value"><strong>${(store.inferred_data as any).qadm_estimado.toFixed(2)} ton/m²</strong></span>
+            </div>
+          ` : ''}
+          ${store.registered_by ? `
+            <div class="tooltip-divider"></div>
+            <div class="tooltip-row">
+              <span class="tooltip-label">Registrada por:</span>
+              <span class="tooltip-value" style="color: #a3a3a3;">${store.registered_by}</span>
             </div>
           ` : ''}
         </div>

@@ -37,7 +37,7 @@ export default function AdminPage() {
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newFullName, setNewFullName] = useState('')
-  const [newRole, setNewRole] = useState<UserRole>('read')
+  const [newRole, setNewRole] = useState<UserRole>('viewer')
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
   
@@ -337,7 +337,7 @@ export default function AdminPage() {
                       <td className="p-4">
                         <div className="relative inline-block">
                           <select
-                            value={normalizeRole(user.role)}
+                            value={user.role}
                             onChange={(e) => handleRoleChangeRequest(user, e.target.value as UserRole)}
                             disabled={user.id === profile?.id || updatingUserId === user.id}
                             className={cn(
@@ -348,8 +348,8 @@ export default function AdminPage() {
                             )}
                           >
                             <option value="admin">👑 Admin</option>
-                            <option value="write">✏️ Editor</option>
-                            <option value="read">👁️ Lectura</option>
+                            <option value="editor">✏️ Editor</option>
+                            <option value="viewer">👁️ Lectura</option>
                           </select>
                           {updatingUserId === user.id && (
                             <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-purple-400" />
@@ -494,8 +494,8 @@ export default function AdminPage() {
                     )}
                     style={{ borderColor, color: textPrimary }}
                   >
-                    <option value="read">👁️ Solo lectura - Solo puede visualizar datos</option>
-                    <option value="write">✏️ Editor - Puede agregar tiendas</option>
+                    <option value="viewer">👁️ Solo lectura - Solo puede visualizar datos</option>
+                    <option value="editor">✏️ Editor - Puede agregar tiendas</option>
                     <option value="admin">👑 Administrador - Acceso total</option>
                   </select>
                 </div>

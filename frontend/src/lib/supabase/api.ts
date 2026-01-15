@@ -136,30 +136,50 @@ export async function fetchInferredStores(): Promise<InferredStore[]> {
   return data || []
 }
 
-// Fetch inferred stores with user info (join with profiles)
+// Fetch inferred stores with user info (manual join with profiles)
 export async function fetchInferredStoresWithUser(): Promise<InferredStoreWithUser[]> {
   const supabase = createClient()
   
-  const { data, error } = await supabase
+  // First fetch all inferred stores
+  const { data: storesData, error: storesError } = await supabase
     .from('inferred_stores')
-    .select(`
-      *,
-      profiles:user_id (
-        full_name
-      )
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
   
-  if (error) {
-    console.error('Error fetching inferred stores with user:', error)
+  if (storesError) {
+    console.error('Error fetching inferred stores:', storesError)
     throw new Error('Failed to fetch inferred stores')
   }
   
-  // Transform data to flatten the profiles join
-  return (data || []).map((store: any) => ({
+  const stores = storesData as InferredStore[] | null
+  
+  if (!stores || stores.length === 0) {
+    return []
+  }
+  
+  // Get unique user_ids
+  const userIds = stores.map(s => s.user_id).filter((id): id is string => id !== null)
+  const uniqueUserIds = Array.from(new Set(userIds))
+  
+  // Fetch profiles for those user_ids
+  let profilesMap: Record<string, string> = {}
+  if (uniqueUserIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', uniqueUserIds)
+    
+    if (!profilesError && profiles) {
+      (profiles as { id: string; full_name: string | null }[]).forEach(p => {
+        profilesMap[p.id] = p.full_name || 'Usuario'
+      })
+    }
+  }
+  
+  // Merge data
+  return stores.map(store => ({
     ...store,
-    registered_by: store.profiles?.full_name || null,
-    profiles: undefined // Remove nested object
+    registered_by: store.user_id ? profilesMap[store.user_id] || null : null
   }))
 }
 

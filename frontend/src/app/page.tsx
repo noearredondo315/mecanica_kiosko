@@ -12,7 +12,7 @@ import {
   updateInferredStore,
   deleteInferredStore,
   type Store,
-  type InferredStore
+  type InferredStoreWithUser
 } from '@/lib/supabase/api'
 import type { Database } from '@/lib/supabase/types'
 
@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const { isAuthenticated, isLoading: isAuthLoading, canDelete, canWrite } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStore, setSelectedStore] = useState<Store | null>(null)
-  const [selectedInferredStore, setSelectedInferredStore] = useState<InferredStore | null>(null)
+  const [selectedInferredStore, setSelectedInferredStore] = useState<InferredStoreWithUser | null>(null)
   const [inferredStoresVersion, setInferredStoresVersion] = useState(0)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
     setSelectedStore(null)
   }, [])
 
-  const handleInferredStoreSelect = useCallback((store: InferredStore) => {
+  const handleInferredStoreSelect = useCallback((store: InferredStoreWithUser) => {
     setSelectedInferredStore(store)
     setSelectedStore(null) // Close official store panel if open
   }, [])

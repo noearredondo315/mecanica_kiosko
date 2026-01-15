@@ -1,13 +1,13 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, MapPin, Calendar, Building2, Layers, Droplets, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Trash2, Edit3 } from 'lucide-react'
+import { X, MapPin, Calendar, Building2, Layers, Droplets, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Trash2, Edit3, User } from 'lucide-react'
 import { useState } from 'react'
-import type { InferredStore } from '@/lib/supabase/api'
+import type { InferredStoreWithUser } from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
 
 interface InferredStoreDetailPanelProps {
-  store: InferredStore | null
+  store: InferredStoreWithUser | null
   onClose: () => void
   onDelete?: (id: string) => void
   onEdit?: (id: string, newName: string) => void
@@ -291,11 +291,20 @@ export default function InferredStoreDetailPanel({
             <DataRow label="Ciudad" value={(store.metadata as any)?.ciudad} />
           </Section>
 
-          {/* Dates */}
+          {/* Dates & User Info */}
           <Section title="Información" icon={Calendar} defaultOpen={false}>
             <DataRow label="Creada" value={formatDate(store.created_at)} />
             <DataRow label="Actualizada" value={formatDate(store.updated_at)} />
             <DataRow label="ID" value={store.id} />
+            {store.registered_by && (
+              <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-[rgba(var(--glass-bg))]">
+                <User className="w-4 h-4 text-[rgb(var(--text-muted))]" />
+                <div>
+                  <p className="text-[10px] text-[rgb(var(--text-muted))]">Registrada por:</p>
+                  <p className="text-xs text-[rgb(var(--text-secondary))]">{store.registered_by}</p>
+                </div>
+              </div>
+            )}
           </Section>
         </div>
 
