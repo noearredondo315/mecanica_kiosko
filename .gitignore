@@ -5,12 +5,29 @@
 
 # Logs de procesamiento
 *.log
+procesamiento_*.log
 
 # Archivos de salida generados
 Consolidado_Tiendas.xlsx
 Consolidado_Tiendas.csv
 Consolidado_Tiendas.json
+Consolidado_TIENDAS_*.xlsx
+Consolidado_TIENDAS_*.json
+Master_Tiendas_*.xlsx
 *_errores.csv
+tiendas_inferidas_*.json
+fixed_tiendas.xlsx
+test_*.xlsx
+
+# Carpetas de datos procesados
+TIENDAS_14ENERO/
+info/
+
+# Scripts de automatización (contienen credenciales y son específicos del entorno)
+scripts/
+
+# Archivos temporales de Excel
+~$*.xlsx
 
 # Python
 __pycache__/

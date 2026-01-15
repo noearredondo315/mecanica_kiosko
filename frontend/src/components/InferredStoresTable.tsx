@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Trash2, Edit3, Check, MapPin, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, Trash2, Edit3, Check, MapPin, ChevronDown, ChevronUp, User } from 'lucide-react'
 import { 
-  fetchInferredStores, 
+  fetchInferredStoresWithUser, 
   updateInferredStore, 
   deleteInferredStore,
-  type InferredStore
+  type InferredStoreWithUser
 } from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
 
@@ -22,12 +23,18 @@ export default function InferredStoresTable({
   onClose,
   onStoresChange 
 }: InferredStoresTableProps) {
-  const [stores, setStores] = useState<InferredStore[]>([])
+  const [stores, setStores] = useState<InferredStoreWithUser[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [sortField, setSortField] = useState<'nombre' | 'created_at' | 'confidence_score'>('created_at')
   const [sortAsc, setSortAsc] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -36,7 +43,7 @@ export default function InferredStoresTable({
   }, [isOpen])
 
   const loadData = async () => {
-    const data = await fetchInferredStores()
+    const data = await fetchInferredStoresWithUser()
     setStores(data)
   }
 
@@ -61,7 +68,7 @@ export default function InferredStoresTable({
     }
   }
 
-  const handleStartEdit = (store: InferredStore) => {
+  const handleStartEdit = (store: InferredStoreWithUser) => {
     setEditingId(store.id)
     setEditName(store.nombre)
   }
@@ -92,15 +99,16 @@ export default function InferredStoresTable({
     })
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
-  return (
+  // Use portal to render modal at document body level, bypassing any CSS constraints
+  const modalContent = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <motion.div
@@ -181,6 +189,9 @@ export default function InferredStoresTable({
                         )}
                       </div>
                     </th>
+                    <th className="text-left p-3 text-xs font-semibold text-[rgb(var(--text-muted))] uppercase tracking-wider">
+                      Registrada por
+                    </th>
                     <th className="text-center p-3 text-xs font-semibold text-[rgb(var(--text-muted))] uppercase tracking-wider">
                       Acciones
                     </th>
@@ -242,6 +253,14 @@ export default function InferredStoresTable({
                         </span>
                       </td>
                       <td className="p-3">
+                        <div className="flex items-center gap-2" title={store.registered_by ? `Registrada por: ${store.registered_by}` : 'Usuario desconocido'}>
+                          <User className="w-3.5 h-3.5 text-[rgb(var(--text-muted))]" />
+                          <span className="text-xs text-[rgb(var(--text-secondary))]">
+                            {store.registered_by || 'N/A'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-3">
                         <div className="flex items-center justify-center gap-1">
                           {deleteConfirmId === store.id ? (
                             <>
@@ -295,4 +314,6 @@ export default function InferredStoresTable({
       </motion.div>
     </AnimatePresence>
   )
+
+  return createPortal(modalContent, document.body)
 }

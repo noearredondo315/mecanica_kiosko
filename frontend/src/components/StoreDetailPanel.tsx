@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, MapPin, Calendar, Building2, Layers, Droplets, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, MapPin, Calendar, Building2, Layers, Droplets, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, FileText, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import type { Store, AlternativaCimentacion } from '@/lib/supabase/api'
 import { cn } from '@/lib/utils'
@@ -196,17 +196,36 @@ export default function StoreDetailPanel({ store, onClose }: StoreDetailPanelPro
                   </p>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className={cn(
-                  'p-2 rounded-lg shrink-0',
-                  'bg-[rgba(var(--glass-bg))] hover:bg-[rgba(var(--card-bg))]',
-                  'border border-[rgba(var(--border-color))]',
-                  'transition-colors'
+              <div className="flex items-center gap-2 shrink-0">
+                {/* PDF Button */}
+                {store.url_pdf && (
+                  <a
+                    href={store.url_pdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      'p-2 rounded-lg',
+                      'bg-[rgba(var(--accent-primary),0.1)] hover:bg-[rgba(var(--accent-primary),0.2)]',
+                      'border border-[rgba(var(--accent-primary),0.3)]',
+                      'transition-colors group'
+                    )}
+                    title="Ver PDF del estudio"
+                  >
+                    <FileText className="w-4 h-4 text-[rgb(var(--accent-primary))] group-hover:scale-110 transition-transform" />
+                  </a>
                 )}
-              >
-                <X className="w-4 h-4 text-[rgb(var(--text-muted))]" />
-              </button>
+                <button
+                  onClick={onClose}
+                  className={cn(
+                    'p-2 rounded-lg',
+                    'bg-[rgba(var(--glass-bg))] hover:bg-[rgba(var(--card-bg))]',
+                    'border border-[rgba(var(--border-color))]',
+                    'transition-colors'
+                  )}
+                >
+                  <X className="w-4 h-4 text-[rgb(var(--text-muted))]" />
+                </button>
+              </div>
             </div>
             
             {/* Quick stats */}

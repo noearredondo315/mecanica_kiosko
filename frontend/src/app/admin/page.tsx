@@ -41,6 +41,14 @@ export default function AdminPage() {
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
   
+  // Role change confirmation modal state
+  const [roleChangeConfirm, setRoleChangeConfirm] = useState<{
+    userId: string
+    userName: string
+    currentRole: UserRole
+    newRole: UserRole
+  } | null>(null)
+  
   const supabase = createClient()
 
   const fetchUsers = useCallback(async () => {
@@ -101,9 +109,25 @@ export default function AdminPage() {
     }
   }
 
-  const handleUpdateRole = async (userId: string, newRole: UserRole) => {
+  // Open confirmation modal before updating role
+  const handleRoleChangeRequest = (user: UserProfile, newRole: UserRole) => {
+    if (user.role === newRole) return
+    setRoleChangeConfirm({
+      userId: user.id,
+      userName: user.full_name || user.email || 'Usuario',
+      currentRole: user.role,
+      newRole
+    })
+  }
+
+  // Actually update the role after confirmation
+  const handleUpdateRole = async () => {
+    if (!roleChangeConfirm) return
+    
+    const { userId, newRole } = roleChangeConfirm
     setUpdatingUserId(userId)
     setUpdateError(null)
+    setRoleChangeConfirm(null)
     
     try {
       const { error } = await (supabase
@@ -314,7 +338,7 @@ export default function AdminPage() {
                         <div className="relative inline-block">
                           <select
                             value={normalizeRole(user.role)}
-                            onChange={(e) => handleUpdateRole(user.id, e.target.value as UserRole)}
+                            onChange={(e) => handleRoleChangeRequest(user, e.target.value as UserRole)}
                             disabled={user.id === profile?.id || updatingUserId === user.id}
                             className={cn(
                               'px-3 py-1 rounded-lg border text-sm font-medium',
@@ -515,6 +539,73 @@ export default function AdminPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Role Change Confirmation Modal */}
+      <AnimatePresence>
+        {roleChangeConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setRoleChangeConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-2xl border p-6"
+              style={{ background: bgSecondary, borderColor }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-amber-400" />
+                </div>
+                <h3 className="text-lg font-semibold" style={{ color: textPrimary }}>
+                  Confirmar cambio de rol
+                </h3>
+              </div>
+
+              <p className="mb-6" style={{ color: textSecondary }}>
+                ¿Estás seguro de cambiar el rol de <strong style={{ color: textPrimary }}>{roleChangeConfirm.userName}</strong> de{' '}
+                <span className={cn('px-2 py-0.5 rounded text-sm', getRoleBadgeColor(roleChangeConfirm.currentRole))}>
+                  {getRoleLabel(roleChangeConfirm.currentRole)}
+                </span>{' '}
+                a{' '}
+                <span className={cn('px-2 py-0.5 rounded text-sm', getRoleBadgeColor(roleChangeConfirm.newRole))}>
+                  {getRoleLabel(roleChangeConfirm.newRole)}
+                </span>?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setRoleChangeConfirm(null)}
+                  className={cn(
+                    'flex-1 py-2.5 rounded-xl font-medium',
+                    'bg-[rgba(var(--glass-bg))] border',
+                    'hover:bg-[rgba(var(--card-bg))] transition-colors'
+                  )}
+                  style={{ borderColor, color: textPrimary }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleUpdateRole}
+                  className={cn(
+                    'flex-1 py-2.5 rounded-xl font-medium',
+                    'bg-gradient-to-r from-purple-500 to-pink-500',
+                    'hover:from-purple-600 hover:to-pink-600',
+                    'text-white transition-all'
+                  )}
+                >
+                  Confirmar
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

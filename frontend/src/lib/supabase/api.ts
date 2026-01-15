@@ -6,6 +6,11 @@ import type { Database } from './types'
 export type Store = Database['public']['Tables']['stores']['Row']
 export type InferredStore = Database['public']['Tables']['inferred_stores']['Row']
 
+// Extended type with user info from profiles join
+export interface InferredStoreWithUser extends InferredStore {
+  registered_by?: string | null
+}
+
 export interface AlternativaCimentacion {
   tipo_cimentacion: string
   capacidad_carga_admisible_ton_m2: number
@@ -129,6 +134,33 @@ export async function fetchInferredStores(): Promise<InferredStore[]> {
   }
   
   return data || []
+}
+
+// Fetch inferred stores with user info (join with profiles)
+export async function fetchInferredStoresWithUser(): Promise<InferredStoreWithUser[]> {
+  const supabase = createClient()
+  
+  const { data, error } = await supabase
+    .from('inferred_stores')
+    .select(`
+      *,
+      profiles:user_id (
+        full_name
+      )
+    `)
+    .order('created_at', { ascending: false })
+  
+  if (error) {
+    console.error('Error fetching inferred stores with user:', error)
+    throw new Error('Failed to fetch inferred stores')
+  }
+  
+  // Transform data to flatten the profiles join
+  return (data || []).map((store: any) => ({
+    ...store,
+    registered_by: store.profiles?.full_name || null,
+    profiles: undefined // Remove nested object
+  }))
 }
 
 export async function addInferredStore(store: Database['public']['Tables']['inferred_stores']['Insert']): Promise<InferredStore> {

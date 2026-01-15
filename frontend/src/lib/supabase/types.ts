@@ -76,6 +76,7 @@ export interface Database {
           coeficiente_sismico: string | null
           clasificacion_sitio: string | null
           observaciones_criticas: string | null
+          url_pdf: string | null
           created_at: string
         }
         Insert: {
@@ -111,6 +112,7 @@ export interface Database {
           coeficiente_sismico?: string | null
           clasificacion_sitio?: string | null
           observaciones_criticas?: string | null
+          url_pdf?: string | null
           created_at?: string
         }
         Update: {
@@ -146,6 +148,7 @@ export interface Database {
           coeficiente_sismico?: string | null
           clasificacion_sitio?: string | null
           observaciones_criticas?: string | null
+          url_pdf?: string | null
           created_at?: string
         }
       }
